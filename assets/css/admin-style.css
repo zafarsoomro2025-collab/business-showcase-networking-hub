@@ -1,0 +1,54 @@
+/**
+ * Business Showcase & Networking Hub
+ * Admin Styles
+ * Version: 1.0.0
+ */
+
+/* Admin Panel Styles */
+.business-showcase-admin-wrapper {
+    max-width: 1200px;
+    margin: 20px 0;
+}
+
+.business-showcase-admin-header {
+    background: #fff;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-left: 4px solid #2271b1;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.business-showcase-admin-header h1 {
+    margin: 0 0 10px 0;
+    font-size: 24px;
+}
+
+.business-showcase-settings-section {
+    background: #fff;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.business-showcase-settings-section h2 {
+    margin-top: 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.business-showcase-form-group {
+    margin-bottom: 20px;
+}
+
+.business-showcase-form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.business-showcase-form-group input[type="text"],
+.business-showcase-form-group textarea,
+.business-showcase-form-group select {
+    width: 100%;
+    max-width: 500px;
+}
