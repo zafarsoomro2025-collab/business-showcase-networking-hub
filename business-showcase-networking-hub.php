@@ -511,3 +511,269 @@ function business_showcase_save_meta_box( $post_id ) {
     }
 }
 add_action( 'save_post_business_profile', 'business_showcase_save_meta_box' );
+
+/**
+ * Register Shortcode: [business_directory]
+ */
+function business_showcase_directory_shortcode( $atts ) {
+    // Shortcode attributes
+    $atts = shortcode_atts( array(
+        'posts_per_page' => 12,
+        'category' => '',
+        'featured_only' => false,
+    ), $atts );
+    
+    // Start output buffering
+    ob_start();
+    
+    // Get all business categories
+    $categories = get_terms( array(
+        'taxonomy' => 'business_category',
+        'hide_empty' => true,
+    ) );
+    
+    // Get all unique services
+    $all_services = business_showcase_get_all_services();
+    
+    ?>
+    <div class="business-showcase-directory" id="business-directory">
+        
+        <!-- Filters -->
+        <div class="business-directory-filters">
+            <div class="filter-group">
+                <label for="category-filter">
+                    <?php esc_html_e( 'Filter by Category:', 'business-showcase-networking-hub' ); ?>
+                </label>
+                <select id="category-filter" class="business-filter">
+                    <option value=""><?php esc_html_e( 'All Categories', 'business-showcase-networking-hub' ); ?></option>
+                    <?php if ( ! empty( $categories ) && ! is_wp_error( $categories ) ) : ?>
+                        <?php foreach ( $categories as $category ) : ?>
+                            <option value="<?php echo esc_attr( $category->slug ); ?>">
+                                <?php echo esc_html( $category->name ); ?> (<?php echo $category->count; ?>)
+                            </option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="service-filter">
+                    <?php esc_html_e( 'Filter by Service:', 'business-showcase-networking-hub' ); ?>
+                </label>
+                <select id="service-filter" class="business-filter">
+                    <option value=""><?php esc_html_e( 'All Services', 'business-showcase-networking-hub' ); ?></option>
+                    <?php foreach ( $all_services as $service_key => $service_label ) : ?>
+                        <option value="<?php echo esc_attr( $service_key ); ?>">
+                            <?php echo esc_html( $service_label ); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <button type="button" id="reset-filters" class="business-reset-btn">
+                    <?php esc_html_e( 'Reset Filters', 'business-showcase-networking-hub' ); ?>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Loading indicator -->
+        <div id="business-loading" class="business-loading" style="display: none;">
+            <p><?php esc_html_e( 'Loading...', 'business-showcase-networking-hub' ); ?></p>
+        </div>
+        
+        <!-- Business Grid -->
+        <div id="business-grid" class="business-grid">
+            <?php echo business_showcase_get_business_grid( $atts ); ?>
+        </div>
+        
+    </div>
+    <?php
+    
+    return ob_get_clean();
+}
+add_shortcode( 'business_directory', 'business_showcase_directory_shortcode' );
+
+/**
+ * Get Business Grid HTML
+ */
+function business_showcase_get_business_grid( $args = array() ) {
+    $defaults = array(
+        'posts_per_page' => 12,
+        'category' => '',
+        'service' => '',
+        'featured_only' => false,
+    );
+    
+    $args = wp_parse_args( $args, $defaults );
+    
+    // Query arguments
+    $query_args = array(
+        'post_type' => 'business_profile',
+        'posts_per_page' => intval( $args['posts_per_page'] ),
+        'post_status' => 'publish',
+        'orderby' => 'date',
+        'order' => 'DESC',
+    );
+    
+    // Filter by category
+    if ( ! empty( $args['category'] ) ) {
+        $query_args['tax_query'] = array(
+            array(
+                'taxonomy' => 'business_category',
+                'field' => 'slug',
+                'terms' => sanitize_text_field( $args['category'] ),
+            ),
+        );
+    }
+    
+    // Filter by featured
+    if ( $args['featured_only'] ) {
+        $query_args['meta_query'] = array(
+            array(
+                'key' => '_business_is_featured',
+                'value' => '1',
+            ),
+        );
+    }
+    
+    // Filter by service (meta query)
+    if ( ! empty( $args['service'] ) ) {
+        if ( ! isset( $query_args['meta_query'] ) ) {
+            $query_args['meta_query'] = array();
+        }
+        $query_args['meta_query'][] = array(
+            'key' => '_business_services',
+            'value' => serialize( sanitize_text_field( $args['service'] ) ),
+            'compare' => 'LIKE',
+        );
+    }
+    
+    $query = new WP_Query( $query_args );
+    
+    ob_start();
+    
+    if ( $query->have_posts() ) :
+        while ( $query->have_posts() ) : $query->the_post();
+            $post_id = get_the_ID();
+            $website_url = get_post_meta( $post_id, '_business_website_url', true );
+            $contact_email = get_post_meta( $post_id, '_business_contact_email', true );
+            $services = get_post_meta( $post_id, '_business_services', true );
+            $is_featured = get_post_meta( $post_id, '_business_is_featured', true );
+            $categories = get_the_terms( $post_id, 'business_category' );
+            ?>
+            
+            <div class="business-card <?php echo ( $is_featured == '1' ) ? 'featured' : ''; ?>">
+                
+                <?php if ( $is_featured == '1' ) : ?>
+                    <span class="featured-badge"><?php esc_html_e( 'Featured', 'business-showcase-networking-hub' ); ?></span>
+                <?php endif; ?>
+                
+                <?php if ( has_post_thumbnail() ) : ?>
+                    <div class="business-logo">
+                        <a href="<?php the_permalink(); ?>">
+                            <?php the_post_thumbnail( 'medium' ); ?>
+                        </a>
+                    </div>
+                <?php endif; ?>
+                
+                <div class="business-content">
+                    <h3 class="business-title">
+                        <a href="<?php the_permalink(); ?>"><?php the_title(); ?></a>
+                    </h3>
+                    
+                    <?php if ( $categories && ! is_wp_error( $categories ) ) : ?>
+                        <div class="business-categories">
+                            <?php foreach ( $categories as $category ) : ?>
+                                <span class="business-category-tag"><?php echo esc_html( $category->name ); ?></span>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <div class="business-excerpt">
+                        <?php echo wp_trim_words( get_the_excerpt(), 20 ); ?>
+                    </div>
+                    
+                    <?php if ( ! empty( $services ) && is_array( $services ) ) : ?>
+                        <div class="business-services">
+                            <strong><?php esc_html_e( 'Services:', 'business-showcase-networking-hub' ); ?></strong>
+                            <?php 
+                            $service_labels = business_showcase_get_service_labels();
+                            $service_names = array();
+                            foreach ( $services as $service ) {
+                                if ( isset( $service_labels[ $service ] ) ) {
+                                    $service_names[] = $service_labels[ $service ];
+                                }
+                            }
+                            echo esc_html( implode( ', ', $service_names ) );
+                            ?>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <div class="business-actions">
+                        <?php if ( $website_url ) : ?>
+                            <a href="<?php echo esc_url( $website_url ); ?>" target="_blank" class="business-btn">
+                                <?php esc_html_e( 'Visit Website', 'business-showcase-networking-hub' ); ?>
+                            </a>
+                        <?php endif; ?>
+                        <a href="<?php the_permalink(); ?>" class="business-btn business-btn-secondary">
+                            <?php esc_html_e( 'View Details', 'business-showcase-networking-hub' ); ?>
+                        </a>
+                    </div>
+                </div>
+                
+            </div>
+            
+        <?php endwhile;
+        wp_reset_postdata();
+    else : ?>
+        <p class="no-businesses-found"><?php esc_html_e( 'No businesses found.', 'business-showcase-networking-hub' ); ?></p>
+    <?php endif;
+    
+    return ob_get_clean();
+}
+
+/**
+ * Get all available services
+ */
+function business_showcase_get_all_services() {
+    return array(
+        'consulting' => __( 'Consulting', 'business-showcase-networking-hub' ),
+        'design' => __( 'Design', 'business-showcase-networking-hub' ),
+        'development' => __( 'Development', 'business-showcase-networking-hub' ),
+        'marketing' => __( 'Marketing', 'business-showcase-networking-hub' ),
+        'sales' => __( 'Sales', 'business-showcase-networking-hub' ),
+        'support' => __( 'Support', 'business-showcase-networking-hub' ),
+        'training' => __( 'Training', 'business-showcase-networking-hub' ),
+        'other' => __( 'Other', 'business-showcase-networking-hub' ),
+    );
+}
+
+/**
+ * Get service labels (helper function)
+ */
+function business_showcase_get_service_labels() {
+    return business_showcase_get_all_services();
+}
+
+/**
+ * AJAX Handler for filtering businesses
+ */
+function business_showcase_filter_businesses() {
+    check_ajax_referer( 'business_showcase_nonce', 'nonce' );
+    
+    $category = isset( $_POST['category'] ) ? sanitize_text_field( $_POST['category'] ) : '';
+    $service = isset( $_POST['service'] ) ? sanitize_text_field( $_POST['service'] ) : '';
+    
+    $args = array(
+        'posts_per_page' => 12,
+        'category' => $category,
+        'service' => $service,
+    );
+    
+    $html = business_showcase_get_business_grid( $args );
+    
+    wp_send_json_success( array( 'html' => $html ) );
+}
+add_action( 'wp_ajax_business_showcase_filter', 'business_showcase_filter_businesses' );
+add_action( 'wp_ajax_nopriv_business_showcase_filter', 'business_showcase_filter_businesses' );

@@ -12,6 +12,7 @@
      */
     $(document).ready(function() {
         businessShowcaseInit();
+        initBusinessDirectory();
     });
 
     /**
@@ -25,6 +26,70 @@
         // Example: Handle business showcase interactions
         $('.business-showcase-item').on('click', function() {
             // Handle item click
+        });
+    }
+
+    /**
+     * Initialize Business Directory Filtering
+     */
+    function initBusinessDirectory() {
+        if ($('#business-directory').length === 0) {
+            return;
+        }
+        
+        // Handle filter changes
+        $('#category-filter, #service-filter').on('change', function() {
+            filterBusinesses();
+        });
+        
+        // Handle reset button
+        $('#reset-filters').on('click', function() {
+            $('#category-filter').val('');
+            $('#service-filter').val('');
+            filterBusinesses();
+        });
+    }
+
+    /**
+     * Filter Businesses via AJAX
+     */
+    function filterBusinesses() {
+        var $grid = $('#business-grid');
+        var $loading = $('#business-loading');
+        var category = $('#category-filter').val();
+        var service = $('#service-filter').val();
+        
+        // Show loading
+        $loading.show();
+        $grid.css('opacity', '0.5');
+        
+        $.ajax({
+            url: businessShowcaseAjax.ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'business_showcase_filter',
+                nonce: businessShowcaseAjax.nonce,
+                category: category,
+                service: service
+            },
+            success: function(response) {
+                if (response.success) {
+                    $grid.html(response.data.html);
+                    
+                    // Smooth scroll to grid
+                    $('html, body').animate({
+                        scrollTop: $grid.offset().top - 100
+                    }, 500);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Filter error:', error);
+                alert('Error filtering businesses. Please try again.');
+            },
+            complete: function() {
+                $loading.hide();
+                $grid.css('opacity', '1');
+            }
         });
     }
 
