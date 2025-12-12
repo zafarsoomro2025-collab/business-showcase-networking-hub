@@ -606,6 +606,116 @@ function business_showcase_directory_shortcode( $atts ) {
 add_shortcode( 'business_directory', 'business_showcase_directory_shortcode' );
 
 /**
+ * Register Shortcode: [featured_businesses]
+ */
+function business_showcase_featured_shortcode( $atts ) {
+    // Shortcode attributes
+    $atts = shortcode_atts( array(
+        'posts_per_page' => 6,
+        'columns' => 3,
+    ), $atts );
+    
+    // Query arguments for featured businesses
+    $query_args = array(
+        'post_type' => 'business_profile',
+        'posts_per_page' => intval( $atts['posts_per_page'] ),
+        'post_status' => 'publish',
+        'orderby' => 'date',
+        'order' => 'DESC',
+        'meta_query' => array(
+            array(
+                'key' => '_business_is_featured',
+                'value' => '1',
+            ),
+        ),
+    );
+    
+    $query = new WP_Query( $query_args );
+    
+    ob_start();
+    
+    if ( $query->have_posts() ) :
+        $columns = intval( $atts['columns'] );
+        $columns_class = 'columns-' . $columns;
+        ?>
+        
+        <div class="featured-businesses-container">
+            <div class="featured-businesses-grid <?php echo esc_attr( $columns_class ); ?>">
+                
+                <?php while ( $query->have_posts() ) : $query->the_post();
+                    $post_id = get_the_ID();
+                    $star_rating = get_post_meta( $post_id, '_business_star_rating', true );
+                    $categories = get_the_terms( $post_id, 'business_category' );
+                ?>
+                
+                <div class="featured-business-item">
+                    
+                    <div class="featured-business-inner">
+                        
+                        <?php if ( has_post_thumbnail() ) : ?>
+                            <div class="featured-business-logo">
+                                <a href="<?php the_permalink(); ?>">
+                                    <?php the_post_thumbnail( 'medium', array( 'alt' => esc_attr( get_the_title() ) ) ); ?>
+                                </a>
+                            </div>
+                        <?php endif; ?>
+                        
+                        <div class="featured-business-content">
+                            
+                            <h3 class="featured-business-title">
+                                <a href="<?php the_permalink(); ?>">
+                                    <?php the_title(); ?>
+                                </a>
+                            </h3>
+                            
+                            <?php if ( $categories && ! is_wp_error( $categories ) ) : ?>
+                                <div class="featured-business-category">
+                                    <?php 
+                                    $category_names = array();
+                                    foreach ( $categories as $category ) {
+                                        $category_names[] = $category->name;
+                                    }
+                                    echo esc_html( implode( ', ', $category_names ) );
+                                    ?>
+                                </div>
+                            <?php endif; ?>
+                            
+                            <?php if ( ! empty( $star_rating ) && $star_rating > 0 ) : ?>
+                                <div class="featured-business-rating">
+                                    <?php echo business_showcase_display_star_rating( floatval( $star_rating ) ); ?>
+                                    <span class="rating-number"><?php echo esc_html( number_format( floatval( $star_rating ), 1 ) ); ?></span>
+                                </div>
+                            <?php endif; ?>
+                            
+                            <a href="<?php the_permalink(); ?>" class="featured-business-link">
+                                <?php esc_html_e( 'View Profile', 'business-showcase-networking-hub' ); ?>
+                                <span class="arrow">→</span>
+                            </a>
+                            
+                        </div>
+                        
+                    </div>
+                    
+                </div>
+                
+                <?php endwhile; ?>
+                
+            </div>
+        </div>
+        
+        <?php
+        wp_reset_postdata();
+    else : ?>
+        <p class="no-featured-businesses">
+            <?php esc_html_e( 'No featured businesses found.', 'business-showcase-networking-hub' ); ?>
+        </p>
+    <?php endif;
+    
+    return ob_get_clean();
+}
+add_shortcode( 'featured_businesses', 'business_showcase_featured_shortcode' );
+
+/**
  * Get Business Grid HTML
  */
 function business_showcase_get_business_grid( $args = array() ) {
