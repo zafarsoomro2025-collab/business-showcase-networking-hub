@@ -993,6 +993,162 @@ add_action( 'wp_ajax_business_showcase_filter', 'business_showcase_filter_busine
 add_action( 'wp_ajax_nopriv_business_showcase_filter', 'business_showcase_filter_businesses' );
 
 /**
+ * Handle Business Contact Form Submission via AJAX
+ */
+function business_showcase_handle_contact_form() {
+    // Verify nonce
+    if ( ! isset( $_POST['business_contact_nonce'] ) || 
+         ! wp_verify_nonce( $_POST['business_contact_nonce'], 'business_contact_form_nonce' ) ) {
+        wp_send_json_error( array(
+            'message' => __( 'Security verification failed. Please refresh the page and try again.', 'business-showcase-networking-hub' )
+        ) );
+    }
+    
+    // Get and validate post ID
+    $post_id = isset( $_POST['post_id'] ) ? intval( $_POST['post_id'] ) : 0;
+    
+    if ( ! $post_id || get_post_type( $post_id ) !== 'business_profile' ) {
+        wp_send_json_error( array(
+            'message' => __( 'Invalid business profile.', 'business-showcase-networking-hub' )
+        ) );
+    }
+    
+    // Get business contact email
+    $business_email = get_post_meta( $post_id, '_business_contact_email', true );
+    
+    if ( ! $business_email || ! is_email( $business_email ) ) {
+        wp_send_json_error( array(
+            'message' => __( 'Business contact email is not available.', 'business-showcase-networking-hub' )
+        ) );
+    }
+    
+    // Sanitize and validate form inputs
+    $contact_name = isset( $_POST['contact_name'] ) ? sanitize_text_field( $_POST['contact_name'] ) : '';
+    $contact_email = isset( $_POST['contact_email'] ) ? sanitize_email( $_POST['contact_email'] ) : '';
+    $contact_subject = isset( $_POST['contact_subject'] ) ? sanitize_text_field( $_POST['contact_subject'] ) : '';
+    $contact_message = isset( $_POST['contact_message'] ) ? sanitize_textarea_field( $_POST['contact_message'] ) : '';
+    
+    // Validate required fields
+    if ( empty( $contact_name ) ) {
+        wp_send_json_error( array(
+            'message' => __( 'Please enter your name.', 'business-showcase-networking-hub' )
+        ) );
+    }
+    
+    if ( empty( $contact_email ) || ! is_email( $contact_email ) ) {
+        wp_send_json_error( array(
+            'message' => __( 'Please enter a valid email address.', 'business-showcase-networking-hub' )
+        ) );
+    }
+    
+    if ( empty( $contact_subject ) ) {
+        wp_send_json_error( array(
+            'message' => __( 'Please enter a subject.', 'business-showcase-networking-hub' )
+        ) );
+    }
+    
+    if ( empty( $contact_message ) ) {
+        wp_send_json_error( array(
+            'message' => __( 'Please enter your message.', 'business-showcase-networking-hub' )
+        ) );
+    }
+    
+    // Get business name
+    $business_name = get_the_title( $post_id );
+    $business_url = get_permalink( $post_id );
+    
+    // Prepare email
+    $email_subject = sprintf(
+        __( 'New inquiry from %s - %s', 'business-showcase-networking-hub' ),
+        $contact_name,
+        $contact_subject
+    );
+    
+    // Email headers
+    $headers = array(
+        'Content-Type: text/html; charset=UTF-8',
+        sprintf( 'From: %s <%s>', $contact_name, $contact_email ),
+        sprintf( 'Reply-To: %s <%s>', $contact_name, $contact_email )
+    );
+    
+    // Email body
+    $email_body = sprintf(
+        '<html><body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+            <h2 style="color: #2271b1; border-bottom: 2px solid #2271b1; padding-bottom: 10px;">%s</h2>
+            
+            <div style="background: #f9f9f9; padding: 20px; border-radius: 6px; margin: 20px 0;">
+                <p style="margin: 0 0 10px 0;"><strong>%s</strong> %s</p>
+                <p style="margin: 0 0 10px 0;"><strong>%s</strong> <a href="mailto:%s">%s</a></p>
+                <p style="margin: 0 0 10px 0;"><strong>%s</strong> %s</p>
+                <p style="margin: 0;"><strong>%s</strong> %s</p>
+            </div>
+            
+            <div style="background: #fff; padding: 20px; border-left: 4px solid #2271b1; margin: 20px 0;">
+                <h3 style="margin-top: 0; color: #333;">%s</h3>
+                <p style="white-space: pre-line;">%s</p>
+            </div>
+            
+            <div style="background: #e3f2fd; padding: 15px; border-radius: 6px; margin-top: 20px;">
+                <p style="margin: 0; font-size: 14px; color: #666;">
+                    %s <a href="%s" style="color: #2271b1; text-decoration: none;">%s</a>
+                </p>
+                <p style="margin: 10px 0 0 0; font-size: 12px; color: #999;">
+                    %s
+                </p>
+            </div>
+        </div>
+        </body></html>',
+        esc_html__( 'New Contact Form Submission', 'business-showcase-networking-hub' ),
+        esc_html__( 'Name:', 'business-showcase-networking-hub' ),
+        esc_html( $contact_name ),
+        esc_html__( 'Email:', 'business-showcase-networking-hub' ),
+        esc_attr( $contact_email ),
+        esc_html( $contact_email ),
+        esc_html__( 'Subject:', 'business-showcase-networking-hub' ),
+        esc_html( $contact_subject ),
+        esc_html__( 'Business Profile:', 'business-showcase-networking-hub' ),
+        esc_html( $business_name ),
+        esc_html__( 'Message:', 'business-showcase-networking-hub' ),
+        esc_html( $contact_message ),
+        esc_html__( 'This message was sent from your business profile:', 'business-showcase-networking-hub' ),
+        esc_url( $business_url ),
+        esc_html( $business_name ),
+        esc_html__( 'Sent via Business Showcase & Networking Hub plugin', 'business-showcase-networking-hub' )
+    );
+    
+    // Send email
+    $email_sent = wp_mail( $business_email, $email_subject, $email_body, $headers );
+    
+    // Send copy to site admin (optional)
+    $admin_email = get_option( 'admin_email' );
+    if ( $admin_email && $admin_email !== $business_email ) {
+        $admin_subject = sprintf(
+            __( '[Copy] Contact form submission for %s', 'business-showcase-networking-hub' ),
+            $business_name
+        );
+        wp_mail( $admin_email, $admin_subject, $email_body, $headers );
+    }
+    
+    if ( $email_sent ) {
+        // Log the contact attempt (optional - can be used for analytics)
+        $contact_count = get_post_meta( $post_id, '_business_contact_count', true );
+        $contact_count = $contact_count ? intval( $contact_count ) + 1 : 1;
+        update_post_meta( $post_id, '_business_contact_count', $contact_count );
+        
+        wp_send_json_success( array(
+            'message' => __( 'Your message has been sent successfully! The business will respond to you shortly.', 'business-showcase-networking-hub' )
+        ) );
+    } else {
+        wp_send_json_error( array(
+            'message' => __( 'Failed to send message. Please try again later or contact the business directly.', 'business-showcase-networking-hub' )
+        ) );
+    }
+}
+add_action( 'wp_ajax_business_showcase_contact', 'business_showcase_handle_contact_form' );
+add_action( 'wp_ajax_nopriv_business_showcase_contact', 'business_showcase_handle_contact_form' );
+
+/**
  * Load Custom Template for Single Business Profile
  */
 function business_showcase_load_template( $template ) {

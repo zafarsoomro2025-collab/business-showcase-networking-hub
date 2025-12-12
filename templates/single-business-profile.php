@@ -195,6 +195,107 @@ while ( have_posts() ) : the_post();
             
         </div>
         
+        <!-- Contact Business Section -->
+        <div class="business-contact-section">
+            
+            <h2 class="section-title"><?php esc_html_e( 'Contact This Business', 'business-showcase-networking-hub' ); ?></h2>
+            
+            <?php if ( $contact_email ) : ?>
+                
+                <div class="contact-form-wrapper">
+                    
+                    <div class="contact-form-intro">
+                        <p><?php esc_html_e( 'Have a question or inquiry? Send a message directly to this business.', 'business-showcase-networking-hub' ); ?></p>
+                    </div>
+                    
+                    <form id="business-contact-form" class="business-contact-form" method="post" data-post-id="<?php echo esc_attr( $post_id ); ?>">
+                        
+                        <?php wp_nonce_field( 'business_contact_form_nonce', 'business_contact_nonce' ); ?>
+                        
+                        <div class="form-messages" id="contact-form-messages"></div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="contact_name">
+                                    <?php esc_html_e( 'Your Name', 'business-showcase-networking-hub' ); ?>
+                                    <span class="required">*</span>
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="contact_name" 
+                                    name="contact_name" 
+                                    class="form-control" 
+                                    required 
+                                    placeholder="<?php esc_attr_e( 'Enter your name', 'business-showcase-networking-hub' ); ?>" />
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="contact_email">
+                                    <?php esc_html_e( 'Your Email', 'business-showcase-networking-hub' ); ?>
+                                    <span class="required">*</span>
+                                </label>
+                                <input 
+                                    type="email" 
+                                    id="contact_email" 
+                                    name="contact_email" 
+                                    class="form-control" 
+                                    required 
+                                    placeholder="<?php esc_attr_e( 'Enter your email', 'business-showcase-networking-hub' ); ?>" />
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="contact_subject">
+                                <?php esc_html_e( 'Subject', 'business-showcase-networking-hub' ); ?>
+                                <span class="required">*</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                id="contact_subject" 
+                                name="contact_subject" 
+                                class="form-control" 
+                                required 
+                                placeholder="<?php esc_attr_e( 'Message subject', 'business-showcase-networking-hub' ); ?>" />
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="contact_message">
+                                <?php esc_html_e( 'Message', 'business-showcase-networking-hub' ); ?>
+                                <span class="required">*</span>
+                            </label>
+                            <textarea 
+                                id="contact_message" 
+                                name="contact_message" 
+                                class="form-control" 
+                                rows="6" 
+                                required 
+                                placeholder="<?php esc_attr_e( 'Enter your message...', 'business-showcase-networking-hub' ); ?>"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <button type="submit" class="submit-btn" id="contact-submit-btn">
+                                <span class="btn-text"><?php esc_html_e( 'Send Message', 'business-showcase-networking-hub' ); ?></span>
+                                <span class="btn-loading" style="display: none;">
+                                    <span class="spinner"></span>
+                                    <?php esc_html_e( 'Sending...', 'business-showcase-networking-hub' ); ?>
+                                </span>
+                            </button>
+                        </div>
+                        
+                    </form>
+                    
+                </div>
+                
+            <?php else : ?>
+                
+                <div class="contact-unavailable">
+                    <p><?php esc_html_e( 'Contact information is not available for this business at the moment.', 'business-showcase-networking-hub' ); ?></p>
+                </div>
+                
+            <?php endif; ?>
+            
+        </div>
+        
         <!-- Reviews Section -->
         <div class="business-reviews-section">
             

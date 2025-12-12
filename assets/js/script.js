@@ -14,6 +14,7 @@
         businessShowcaseInit();
         initBusinessDirectory();
         initStarRating();
+        initContactForm();
     });
 
     /**
@@ -131,6 +132,143 @@
                     return false;
                 }
             }
+        });
+    }
+
+    /**
+     * Initialize Business Contact Form
+     */
+    function initContactForm() {
+        if ($('#business-contact-form').length === 0) {
+            return;
+        }
+        
+        var $form = $('#business-contact-form');
+        var $submitBtn = $('#contact-submit-btn');
+        var $messages = $('#contact-form-messages');
+        
+        $form.on('submit', function(e) {
+            e.preventDefault();
+            
+            // Clear previous messages
+            $messages.html('').removeClass('success error');
+            
+            // Disable submit button
+            $submitBtn.prop('disabled', true);
+            $submitBtn.find('.btn-text').hide();
+            $submitBtn.find('.btn-loading').show();
+            
+            // Get form data
+            var formData = {
+                action: 'business_showcase_contact',
+                business_contact_nonce: $form.find('input[name="business_contact_nonce"]').val(),
+                post_id: $form.data('post-id'),
+                contact_name: $('#contact_name').val().trim(),
+                contact_email: $('#contact_email').val().trim(),
+                contact_subject: $('#contact_subject').val().trim(),
+                contact_message: $('#contact_message').val().trim()
+            };
+            
+            // Validate fields
+            if (!formData.contact_name) {
+                showMessage('error', businessShowcaseAjax.error_text || 'Please enter your name.');
+                resetSubmitButton();
+                return;
+            }
+            
+            if (!formData.contact_email || !isValidEmail(formData.contact_email)) {
+                showMessage('error', 'Please enter a valid email address.');
+                resetSubmitButton();
+                return;
+            }
+            
+            if (!formData.contact_subject) {
+                showMessage('error', 'Please enter a subject.');
+                resetSubmitButton();
+                return;
+            }
+            
+            if (!formData.contact_message) {
+                showMessage('error', 'Please enter your message.');
+                resetSubmitButton();
+                return;
+            }
+            
+            // Send AJAX request
+            $.ajax({
+                url: businessShowcaseAjax.ajaxurl,
+                type: 'POST',
+                data: formData,
+                success: function(response) {
+                    if (response.success) {
+                        showMessage('success', response.data.message);
+                        $form[0].reset();
+                        
+                        // Scroll to success message
+                        $('html, body').animate({
+                            scrollTop: $messages.offset().top - 100
+                        }, 500);
+                    } else {
+                        showMessage('error', response.data.message || 'Failed to send message. Please try again.');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Contact form error:', error);
+                    showMessage('error', 'An error occurred. Please try again later.');
+                },
+                complete: function() {
+                    resetSubmitButton();
+                }
+            });
+        });
+        
+        /**
+         * Show message
+         */
+        function showMessage(type, message) {
+            $messages.removeClass('success error').addClass(type);
+            
+            var icon = type === 'success' ? '✓' : '✕';
+            $messages.html('<div class="message-content"><span class="message-icon">' + icon + '</span>' + message + '</div>');
+            $messages.slideDown(300);
+        }
+        
+        /**
+         * Reset submit button
+         */
+        function resetSubmitButton() {
+            $submitBtn.prop('disabled', false);
+            $submitBtn.find('.btn-text').show();
+            $submitBtn.find('.btn-loading').hide();
+        }
+        
+        /**
+         * Validate email format
+         */
+        function isValidEmail(email) {
+            var regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return regex.test(email);
+        }
+        
+        // Real-time email validation
+        $('#contact_email').on('blur', function() {
+            var $input = $(this);
+            var email = $input.val().trim();
+            
+            if (email && !isValidEmail(email)) {
+                $input.addClass('error');
+                $input.next('.field-error').remove();
+                $input.after('<span class="field-error">Please enter a valid email address.</span>');
+            } else {
+                $input.removeClass('error');
+                $input.next('.field-error').remove();
+            }
+        });
+        
+        // Clear error on input
+        $form.find('input, textarea').on('input', function() {
+            $(this).removeClass('error');
+            $(this).next('.field-error').remove();
         });
     }
 
