@@ -653,7 +653,7 @@ function business_showcase_directory_shortcode( $atts ) {
                     <?php if ( ! empty( $categories ) && ! is_wp_error( $categories ) ) : ?>
                         <?php foreach ( $categories as $category ) : ?>
                             <option value="<?php echo esc_attr( $category->slug ); ?>">
-                                <?php echo esc_html( $category->name ); ?> (<?php echo $category->count; ?>)
+                                <?php echo esc_html( $category->name ); ?> (<?php echo intval( $category->count ); ?>)
                             </option>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -688,7 +688,7 @@ function business_showcase_directory_shortcode( $atts ) {
         
         <!-- Business Grid -->
         <div id="business-grid" class="business-grid">
-            <?php echo business_showcase_get_business_grid( $atts ); ?>
+            <?php echo wp_kses_post( business_showcase_get_business_grid( $atts ) ); ?>
         </div>
         
     </div>
@@ -905,7 +905,7 @@ function business_showcase_get_business_grid( $args = array() ) {
                     <?php endif; ?>
                     
                     <div class="business-excerpt">
-                        <?php echo wp_trim_words( get_the_excerpt(), 20 ); ?>
+                        <?php echo wp_kses_post( wp_trim_words( get_the_excerpt(), 20 ) ); ?>
                     </div>
                     
                     <?php if ( ! empty( $services ) && is_array( $services ) ) : ?>
@@ -987,7 +987,8 @@ function business_showcase_filter_businesses() {
     
     $html = business_showcase_get_business_grid( $args );
     
-    wp_send_json_success( array( 'html' => $html ) );
+    // Ensure HTML is properly escaped before sending
+    wp_send_json_success( array( 'html' => wp_kses_post( $html ) ) );
 }
 add_action( 'wp_ajax_business_showcase_filter', 'business_showcase_filter_businesses' );
 add_action( 'wp_ajax_nopriv_business_showcase_filter', 'business_showcase_filter_businesses' );
