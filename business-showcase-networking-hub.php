@@ -1942,3 +1942,101 @@ function business_showcase_handle_csv_export() {
     exit;
 }
 add_action( 'admin_init', 'business_showcase_handle_csv_export' );
+
+/**
+ * Add Custom Bulk Actions
+ */
+function business_showcase_add_bulk_actions( $bulk_actions ) {
+    $bulk_actions['mark_as_featured'] = __( 'Mark as Featured', 'business-showcase-networking-hub' );
+    $bulk_actions['remove_featured'] = __( 'Remove Featured', 'business-showcase-networking-hub' );
+    return $bulk_actions;
+}
+add_filter( 'bulk_actions-edit-business_profile', 'business_showcase_add_bulk_actions' );
+
+/**
+ * Handle Custom Bulk Actions
+ */
+function business_showcase_handle_bulk_actions( $redirect_to, $action, $post_ids ) {
+    
+    if ( $action === 'mark_as_featured' ) {
+        $updated_count = 0;
+        
+        foreach ( $post_ids as $post_id ) {
+            // Verify it's a business profile
+            if ( get_post_type( $post_id ) === 'business_profile' ) {
+                update_post_meta( $post_id, '_business_is_featured', '1' );
+                $updated_count++;
+            }
+        }
+        
+        $redirect_to = add_query_arg( 'bulk_featured_marked', $updated_count, $redirect_to );
+        return $redirect_to;
+    }
+    
+    if ( $action === 'remove_featured' ) {
+        $updated_count = 0;
+        
+        foreach ( $post_ids as $post_id ) {
+            // Verify it's a business profile
+            if ( get_post_type( $post_id ) === 'business_profile' ) {
+                update_post_meta( $post_id, '_business_is_featured', '0' );
+                $updated_count++;
+            }
+        }
+        
+        $redirect_to = add_query_arg( 'bulk_featured_removed', $updated_count, $redirect_to );
+        return $redirect_to;
+    }
+    
+    return $redirect_to;
+}
+add_filter( 'handle_bulk_actions-edit-business_profile', 'business_showcase_handle_bulk_actions', 10, 3 );
+
+/**
+ * Display Admin Notices for Bulk Actions
+ */
+function business_showcase_bulk_action_admin_notices() {
+    global $pagenow, $typenow;
+    
+    if ( $pagenow === 'edit.php' && $typenow === 'business_profile' ) {
+        
+        // Mark as Featured notice
+        if ( ! empty( $_REQUEST['bulk_featured_marked'] ) ) {
+            $count = intval( $_REQUEST['bulk_featured_marked'] );
+            
+            printf(
+                '<div class="notice notice-success is-dismissible"><p>' .
+                esc_html(
+                    _n(
+                        '%d business profile marked as featured.',
+                        '%d business profiles marked as featured.',
+                        $count,
+                        'business-showcase-networking-hub'
+                    )
+                ) .
+                '</p></div>',
+                $count
+            );
+        }
+        
+        // Remove Featured notice
+        if ( ! empty( $_REQUEST['bulk_featured_removed'] ) ) {
+            $count = intval( $_REQUEST['bulk_featured_removed'] );
+            
+            printf(
+                '<div class="notice notice-success is-dismissible"><p>' .
+                esc_html(
+                    _n(
+                        '%d business profile removed from featured.',
+                        '%d business profiles removed from featured.',
+                        $count,
+                        'business-showcase-networking-hub'
+                    )
+                ) .
+                '</p></div>',
+                $count
+            );
+        }
+    }
+}
+add_action( 'admin_notices', 'business_showcase_bulk_action_admin_notices' );
