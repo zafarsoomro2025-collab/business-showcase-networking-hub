@@ -71,10 +71,52 @@ function business_showcase_load_textdomain() {
 add_action( 'plugins_loaded', 'business_showcase_load_textdomain' );
 
 /**
+ * Check if Business Showcase content is present on the page
+ */
+function business_showcase_has_content() {
+    global $post;
+    
+    // Always load on single business profile pages
+    if ( is_singular( 'business_profile' ) ) {
+        return true;
+    }
+    
+    // Always load on business category archive pages
+    if ( is_tax( 'business_category' ) ) {
+        return true;
+    }
+    
+    // Check if post content has shortcodes or blocks
+    if ( is_a( $post, 'WP_Post' ) ) {
+        // Check for shortcodes
+        if ( has_shortcode( $post->post_content, 'business_directory' ) ||
+             has_shortcode( $post->post_content, 'featured_businesses' ) ) {
+            return true;
+        }
+        
+        // Check for Gutenberg blocks
+        if ( function_exists( 'has_block' ) ) {
+            if ( has_block( 'business-showcase/directory', $post ) ||
+                 has_block( 'business-showcase/success-stories', $post ) ) {
+                return true;
+            }
+        }
+    }
+    
+    return false;
+}
+
+/**
  * Enqueue CSS and JS Files
+ * Assets are loaded conditionally only on pages with business showcase content
  */
 function business_showcase_enqueue_scripts() {
-    // Enqueue CSS
+    // Check if we should load assets
+    if ( ! business_showcase_has_content() ) {
+        return;
+    }
+    
+    // Enqueue main CSS with responsive grid, hover effects, and mobile-friendly layout
     wp_enqueue_style(
         'business-showcase-style',
         BUSINESS_SHOWCASE_PLUGIN_URL . 'assets/css/style.css',
@@ -88,13 +130,13 @@ function business_showcase_enqueue_scripts() {
         wp_enqueue_style(
             'business-showcase-single-style',
             BUSINESS_SHOWCASE_PLUGIN_URL . 'assets/css/single-business-profile.css',
-            array(),
+            array( 'business-showcase-style' ),
             BUSINESS_SHOWCASE_VERSION,
             'all'
         );
     }
     
-    // Enqueue JavaScript
+    // Enqueue JavaScript with jQuery dependency for AJAX filtering and star rating interactions
     wp_enqueue_script(
         'business-showcase-script',
         BUSINESS_SHOWCASE_PLUGIN_URL . 'assets/js/script.js',
@@ -103,17 +145,68 @@ function business_showcase_enqueue_scripts() {
         true
     );
     
-    // Localize script for AJAX
+    // Localize script for AJAX functionality
     wp_localize_script(
         'business-showcase-script',
         'businessShowcaseAjax',
         array(
             'ajaxurl' => admin_url( 'admin-ajax.php' ),
-            'nonce'   => wp_create_nonce( 'business_showcase_nonce' )
+            'nonce' => wp_create_nonce( 'business_showcase_nonce' ),
+            'loading_text' => __( 'Loading...', 'business-showcase-networking-hub' ),
+            'error_text' => __( 'Error loading businesses. Please try again.', 'business-showcase-networking-hub' ),
         )
     );
 }
 add_action( 'wp_enqueue_scripts', 'business_showcase_enqueue_scripts' );
+
+/**
+ * Add inline styles for dynamic content (ratings, featured badges)
+ */
+function business_showcase_inline_styles() {
+    if ( ! business_showcase_has_content() ) {
+        return;
+    }
+    
+    $custom_css = "
+        /* Dynamic Star Rating Colors */
+        .star-rating-display .star.filled {
+            color: #ffc107;
+        }
+        
+        .star-rating-display .star.half {
+            background: linear-gradient(90deg, #ffc107 50%, #e0e0e0 50%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* Featured Badge Animation */
+        @keyframes pulse-featured {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+        
+        .business-card.featured .featured-badge {
+            animation: pulse-featured 2s ease-in-out infinite;
+        }
+        
+        /* Mobile Touch Improvements */
+        @media (max-width: 768px) {
+            .business-card,
+            .success-story-item,
+            .featured-business-item {
+                -webkit-tap-highlight-color: rgba(34, 113, 177, 0.1);
+            }
+        }
+    ";
+    
+    wp_add_inline_style( 'business-showcase-style', $custom_css );
+}
+add_action( 'wp_enqueue_scripts', 'business_showcase_inline_styles', 20 );
 
 /**
  * Enqueue Admin CSS and JS Files
