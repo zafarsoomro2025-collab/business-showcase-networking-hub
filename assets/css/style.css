@@ -1,8 +1,16 @@
 /**
  * Business Showcase & Networking Hub
- * Frontend Styles
+ * Frontend Styles - Responsive Grid, Card Design, Featured Badges, Star Ratings, Hover Animations
  * Version: 1.0.0
  */
+
+/* ========================================
+   RESET & BASE STYLES
+   ======================================== */
+
+* {
+    box-sizing: border-box;
+}
 
 /* Main Plugin Styles */
 .business-showcase-container {
@@ -14,27 +22,48 @@
 .business-showcase-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
+    gap: 25px;
     margin-top: 20px;
 }
 
 .business-showcase-item {
     background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
     padding: 20px;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.business-showcase-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, #2271b1, #135e96);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+}
+
+.business-showcase-item:hover::before {
+    transform: scaleX(1);
 }
 
 .business-showcase-item:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    transform: translateY(-8px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
+    border-color: #2271b1;
 }
 
 .business-showcase-title {
     font-size: 1.5em;
     margin-bottom: 10px;
     color: #333;
+    font-weight: 700;
 }
 
 .business-showcase-description {
@@ -111,54 +140,166 @@
     gap: 25px;
 }
 
-/* Business Card */
+/* ========================================
+   BUSINESS CARD DESIGN
+   ======================================== */
+
 .business-card {
     background: #fff;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
     overflow: hidden;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.business-card::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(135deg, #2271b1, #135e96);
+    border-radius: 12px;
+    opacity: 0;
+    z-index: -1;
+    transition: opacity 0.4s ease;
 }
 
 .business-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
-}
-
-.business-card.featured {
-    border: 2px solid #ffc107;
-}
-
-.featured-badge {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: #ffc107;
-    color: #000;
-    padding: 5px 12px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 600;
-    z-index: 10;
-}
-
+    transform: translateY(-10px) scale(1.02);
+/* Business Logo with Advanced Hover Effect */
 .business-logo {
     width: 100%;
-    height: 200px;
+    height: 240px;
     overflow: hidden;
-    background: #f5f5f5;
+    background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+    position: relative;
+}
+
+.business-logo::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transition: left 0.5s ease;
+}
+
+.business-card:hover .business-logo::before {
+    left: 100%;
 }
 
 .business-logo img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.3s ease;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), filter 0.3s ease;
+    filter: brightness(1) contrast(1);
 }
 
 .business-card:hover .business-logo img {
-    transform: scale(1.05);
+    transform: scale(1.1) rotate(1deg);
+    filter: brightness(1.05) contrastred::after {
+    background: linear-gradient(135deg, #ffc107, #ffb300);
+}
+
+.business-card.featured:hover {
+    box-shadow: 0 20px 40px rgba(255, 193, 7, 0.3);
+}
+
+/* Featured Badge with Animation */
+.featured-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: linear-gradient(135deg, #ffc107, #ffb300);
+    color: #000;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
+    animation: pulse-badge 2s ease-in-out infinite;
+}
+
+@keyframes pulse-badge {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 6px 16px rgba(255, 193, 7, 0.6);
+    }
+}
+
+.featured-badge::before {
+    content: '⭐';
+    margin-right: 4px;
+}
+/* Business Content Section */
+.business-content {
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.business-title {
+    margin: 0 0 12px 0;
+    font-size: 1.5em;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.business-title a {
+    color: #333;
+    text-decoration: none;
+    transition: all 0.3s ease;
+/* Category Tags with Hover Effect */
+.business-categories {
+    margin-bottom: 15px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.business-category-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
+    background: linear-gradient(135deg, #e3f2fd, #d0e9ff);
+    color: #1976d2;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+}
+
+.business-category-tag:hover {
+    background: linear-gradient(135deg, #1976d2, #1565c0);
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(25, 118, 210, 0.3)0.3s ease;
+}
+
+.business-title a:hover {
+    color: #2271b1;
+}
+
+.business-title a:hover::after {
+    width: 100%le(1.05);
 }
 
 .business-content {
@@ -197,61 +338,282 @@
 
 .business-excerpt {
     color: #666;
-    line-height: 1.6;
-    margin-bottom: 15px;
+    line-height: 1.8;
+    margin-bottom: 18px;
+    font-size: 15px;
 }
 
+/* Business Services with Enhanced Design */
 .business-services {
-    margin-bottom: 15px;
-    padding: 10px;
-    background: #f9f9f9;
-    border-radius: 4px;
+    margin-bottom: 18px;
+    padding: 15px;
+    background: linear-gradient(135deg, #f9f9f9, #f0f0f0);
+    border-radius: 8px;
+    border-left: 4px solid #2271b1;
     font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.business-services:hover {
+    background: linear-gradient(135deg, #f0f0f0, #e8e8e8);
+    border-left-width: 6px;
+    transform: translateX(4px);
 }
 
 .business-services strong {
     display: block;
-    margin-bottom: 5px;
+    margin-bottom: 8px;
     color: #333;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
+/* ========================================
+   STAR RATING SYSTEM
+   ======================================== */
+
+.star-rating-display {
+    display: inline-flex;
+    gap: 2px;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.star-rating-display .star {
+    color: #e0e0e0;
+    transition: all 0.2s ease;
+    display: inline-block;
+}
+
+.star-rating-display .star.filled {
+    color: #ffc107;
+    text-shadow: 0 0 8px rgba(255, 193, 7, 0.5);
+    animation: star-glow 1.5s ease-in-out infinite;
+}
+
+@keyframes star-glow {
+    0%, 100% {
+        filter: brightness(1);
+    }
+    50% {
+        filter: brightness(1.2);
+    }
+}
+
+.star-rating-display .star.half {
+    position: relative;
+    color: #e0e0e0;
+}
+
+.star-rating-display .star.half::before {
+    content: '★';
+    position: absolute;
+    left: 0;
+    width: 50%;
+    overflow: hidden;
+    color: #ffc107;
+    text-shadow: 0 0 8px rgba(255, 193, 7, 0.5);
+}
+
+/* Rating with Count */
+.business-rating-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: linear-gradient(135deg, #fff8e1, #fff3cd);
+    border-radius: 8px;
+    border: 1px solid #ffc107;
+}
+
+.business-rating-info .rating-number {
+    font-weight: 700;
+    font-size: 18px;
+    color: #ffc107;
+}
+
+.business-rating-info .rating-count {
+    color: #666;
+    font-size: 13px;
+}
+
+/* Interactive Star Rating Input */
+.star-rating-input {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    gap: 5px;
+    font-size: 32px;
+}
+
+.star-rating-input input[type="radio"] {
+    display: none;
+}
+
+.star-rating-input label {
+    cursor: pointer;
+    color: #e0e0e0;
+    transition: all 0.2s ease;
+}
+
+.star-rating-input label:hover,
+.star-rating-input label:hover ~ label {
+    color: #ffc107;
+    transform: scale(1.1);
+    text-shadow: 0 0 10px rgba(255, 193, 7, 0.6);
+}
+
+.star-rating-input input[type="radio"]:checked ~ label {
+    color: #ffc107;
+    text-shadow: 0 0 10px rgba(255, 193, 7, 0.6);
+}
+
+/* Business Actions - Enhanced Buttons */
 .business-actions {
     display: flex;
-    gap: 10px;
+    gap: 12px;
     flex-wrap: wrap;
+    margin-top: auto;
+    padding-top: 15px;
 }
 
 .business-btn {
-    display: inline-block;
-    padding: 10px 20px;
-    background: #2271b1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #2271b1, #135e96);
     color: #fff;
     text-decoration: none;
-    border-radius: 4px;
+    border-radius: 8px;
     font-size: 14px;
-    transition: background 0.3s ease;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     text-align: center;
     flex: 1;
+    min-width: 120px;
+    position: relative;
+    overflow: hidden;
 }
 
-.business-btn:hover {
-    background: #135e96;
-    color: #fff;
-}
-
-.business-btn-secondary {
-    background: #666;
-}
-
-.business-btn-secondary:hover {
-    background: #444;
-}
-
+.business-btn::before {
+    content: '';
+    position: absolute;
+/* No Businesses Found Message */
 .no-businesses-found {
     text-align: center;
-    padding: 40px;
-    color: #666;
+    padding: 60px 40px;
+    color: #999;
     font-size: 18px;
+    grid-column: 1 / -1;
+    background: linear-gradient(135deg, #f9f9f9, #f0f0f0);
+    border-radius: 12px;
+    border: 2px dashed #ddd;
+    position: relative;
+}
+
+.no-businesses-found::before {
+    content: '🔍';
+    display: block;
+    font-size: 48px;
+    margin-bottom: 15px;
+    opacity: 0.5;
+}
+
+/* ========================================
+   RESPONSIVE GRID SYSTEM
+   ======================================== */
+
+/* Desktop - 4 columns */
+@media (min-width: 1200px) {
+    .business-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* Laptop - 3 columns */
+@media (min-width: 992px) and (max-width: 1199px) {
+    .business-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Tablet - 2 columns */
+@media (min-width: 768px) and (max-width: 991px) {
+    .business-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .business-logo {
+        height: 200px;
+    }
+}
+
+/* Mobile - 1 column */
+@media (max-width: 767px) {
+    .business-showcase-grid,
+    .business-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .business-directory-filters {
+        flex-direction: column;
+        padding: 15px;
+    }
+    
+    .filter-group {
+        width: 100%;
+        min-width: auto;
+    }
+    
+    .business-actions {
+        flex-direction: column;
+    }
+    
+    .business-btn {
+        width: 100%;
+    }
+    
+    .business-logo {
+        height: 200px;
+    }
+    
+    .business-content {
+        padding: 20px;
+    }
+}
+
+/* Extra Small Mobile */
+@media (max-width: 480px) {
+    .business-showcase-container {
+        padding: 15px;
+    }
+    
+    .business-logo {
+        height: 180px;
+    }
+    
+    .business-content {
+        padding: 15px;
+    }
+    
+    .business-title {
+        font-size: 1.3em;
+    }
+    
+    .featured-badge {
+        padding: 6px 12px;
+        font-size: 11px;
+        top: 10px;
+        right: 10px;
+    }
+    
+    .star-rating-display {
+        font-size: 16px
     grid-column: 1 / -1;
 }
 
