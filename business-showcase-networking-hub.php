@@ -1314,3 +1314,274 @@ function business_showcase_custom_comments_template( $template ) {
     return $template;
 }
 add_filter( 'comments_template', 'business_showcase_custom_comments_template' );
+
+/**
+ * Add Custom Columns to Business Profile Admin Listing
+ */
+function business_showcase_add_custom_columns( $columns ) {
+    // Remove default columns we'll reposition
+    $date = $columns['date'];
+    unset( $columns['date'] );
+    
+    // Add custom columns
+    $columns['logo'] = __( 'Logo', 'business-showcase-networking-hub' );
+    $columns['services'] = __( 'Services', 'business-showcase-networking-hub' );
+    $columns['website'] = __( 'Website', 'business-showcase-networking-hub' );
+    $columns['featured'] = __( 'Featured', 'business-showcase-networking-hub' );
+    $columns['rating'] = __( 'Rating', 'business-showcase-networking-hub' );
+    
+    // Re-add date column at the end
+    $columns['date'] = $date;
+    
+    return $columns;
+}
+add_filter( 'manage_business_profile_posts_columns', 'business_showcase_add_custom_columns' );
+
+/**
+ * Populate Custom Columns Content
+ */
+function business_showcase_populate_custom_columns( $column, $post_id ) {
+    switch ( $column ) {
+        
+        case 'logo':
+            if ( has_post_thumbnail( $post_id ) ) {
+                echo '<div class="business-admin-logo">';
+                echo get_the_post_thumbnail( $post_id, array( 60, 60 ) );
+                echo '</div>';
+            } else {
+                echo '<span class="dashicons dashicons-format-image" style="color: #ddd; font-size: 40px;"></span>';
+            }
+            break;
+        
+        case 'services':
+            $services = get_post_meta( $post_id, '_business_services', true );
+            if ( ! empty( $services ) && is_array( $services ) ) {
+                $service_labels = business_showcase_get_service_labels();
+                $service_names = array();
+                
+                foreach ( $services as $service ) {
+                    if ( isset( $service_labels[ $service ] ) ) {
+                        $service_names[] = $service_labels[ $service ];
+                    }
+                }
+                
+                if ( count( $service_names ) > 0 ) {
+                    echo '<div class="business-admin-services">';
+                    foreach ( $service_names as $name ) {
+                        echo '<span class="service-tag">' . esc_html( $name ) . '</span>';
+                    }
+                    echo '</div>';
+                } else {
+                    echo '<span style="color: #999;">—</span>';
+                }
+            } else {
+                echo '<span style="color: #999;">—</span>';
+            }
+            break;
+        
+        case 'website':
+            $website_url = get_post_meta( $post_id, '_business_website_url', true );
+            if ( $website_url ) {
+                echo '<a href="' . esc_url( $website_url ) . '" target="_blank" rel="noopener noreferrer" class="business-website-link">';
+                echo '<span class="dashicons dashicons-admin-links"></span> ';
+                echo esc_html__( 'Visit', 'business-showcase-networking-hub' );
+                echo '</a>';
+            } else {
+                echo '<span style="color: #999;">—</span>';
+            }
+            break;
+        
+        case 'featured':
+            $is_featured = get_post_meta( $post_id, '_business_is_featured', true );
+            if ( $is_featured == '1' ) {
+                echo '<span class="featured-status featured-yes">';
+                echo '<span class="dashicons dashicons-star-filled"></span> ';
+                echo esc_html__( 'Featured', 'business-showcase-networking-hub' );
+                echo '</span>';
+            } else {
+                echo '<span class="featured-status featured-no" style="color: #999;">—</span>';
+            }
+            break;
+        
+        case 'rating':
+            $average_rating = get_post_meta( $post_id, '_business_star_rating', true );
+            $rating_count = get_post_meta( $post_id, '_business_rating_count', true );
+            
+            if ( $average_rating && $rating_count ) {
+                echo '<div class="business-admin-rating">';
+                echo '<span class="rating-stars" style="color: #ffc107; font-size: 16px;">';
+                
+                $rating = floatval( $average_rating );
+                $full_stars = floor( $rating );
+                $half_star = ( $rating - $full_stars ) >= 0.5 ? 1 : 0;
+                
+                for ( $i = 0; $i < $full_stars; $i++ ) {
+                    echo '★';
+                }
+                if ( $half_star ) {
+                    echo '★';
+                }
+                
+                echo '</span><br>';
+                echo '<span class="rating-text">' . esc_html( number_format( $rating, 1 ) ) . ' ';
+                echo '<span style="color: #999;">(' . intval( $rating_count ) . ')</span>';
+                echo '</span>';
+                echo '</div>';
+            } else {
+                echo '<span style="color: #999;">' . esc_html__( 'No reviews', 'business-showcase-networking-hub' ) . '</span>';
+            }
+            break;
+    }
+}
+add_action( 'manage_business_profile_posts_custom_column', 'business_showcase_populate_custom_columns', 10, 2 );
+
+/**
+ * Make Custom Columns Sortable
+ */
+function business_showcase_sortable_columns( $columns ) {
+    $columns['featured'] = 'featured';
+    $columns['rating'] = 'rating';
+    $columns['website'] = 'website';
+    
+    return $columns;
+}
+add_filter( 'manage_edit-business_profile_sortable_columns', 'business_showcase_sortable_columns' );
+
+/**
+ * Handle Custom Column Sorting
+ */
+function business_showcase_handle_column_sorting( $query ) {
+    if ( ! is_admin() || ! $query->is_main_query() ) {
+        return;
+    }
+    
+    if ( $query->get( 'post_type' ) !== 'business_profile' ) {
+        return;
+    }
+    
+    $orderby = $query->get( 'orderby' );
+    
+    switch ( $orderby ) {
+        case 'featured':
+            $query->set( 'meta_key', '_business_is_featured' );
+            $query->set( 'orderby', 'meta_value' );
+            break;
+        
+        case 'rating':
+            $query->set( 'meta_key', '_business_star_rating' );
+            $query->set( 'orderby', 'meta_value_num' );
+            break;
+        
+        case 'website':
+            $query->set( 'meta_key', '_business_website_url' );
+            $query->set( 'orderby', 'meta_value' );
+            break;
+    }
+}
+add_action( 'pre_get_posts', 'business_showcase_handle_column_sorting' );
+
+/**
+ * Add Custom CSS for Admin Columns
+ */
+function business_showcase_admin_column_styles() {
+    global $typenow;
+    
+    if ( $typenow === 'business_profile' ) {
+        ?>
+        <style>
+            /* Logo Column */
+            .column-logo {
+                width: 80px;
+            }
+            
+            .business-admin-logo img {
+                width: 60px;
+                height: 60px;
+                object-fit: cover;
+                border-radius: 4px;
+                border: 1px solid #ddd;
+            }
+            
+            /* Services Column */
+            .column-services {
+                width: 200px;
+            }
+            
+            .business-admin-services {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+            
+            .business-admin-services .service-tag {
+                display: inline-block;
+                padding: 3px 8px;
+                background: #e3f2fd;
+                color: #1976d2;
+                border-radius: 3px;
+                font-size: 11px;
+                white-space: nowrap;
+            }
+            
+            /* Website Column */
+            .column-website {
+                width: 100px;
+            }
+            
+            .business-website-link {
+                display: inline-flex;
+                align-items: center;
+                text-decoration: none;
+            }
+            
+            .business-website-link .dashicons {
+                font-size: 16px;
+                width: 16px;
+                height: 16px;
+            }
+            
+            /* Featured Column */
+            .column-featured {
+                width: 100px;
+            }
+            
+            .featured-status {
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                font-weight: 600;
+            }
+            
+            .featured-yes {
+                color: #ffc107;
+            }
+            
+            .featured-yes .dashicons {
+                color: #ffc107;
+            }
+            
+            /* Rating Column */
+            .column-rating {
+                width: 100px;
+            }
+            
+            .business-admin-rating {
+                text-align: left;
+            }
+            
+            .business-admin-rating .rating-stars {
+                display: block;
+                margin-bottom: 2px;
+                letter-spacing: 2px;
+            }
+            
+            .business-admin-rating .rating-text {
+                font-size: 13px;
+                color: #333;
+                font-weight: 600;
+            }
+        </style>
+        <?php
+    }
+}
+add_action( 'admin_head', 'business_showcase_admin_column_styles' );
