@@ -239,3 +239,228 @@ function business_showcase_register_taxonomy() {
     
     register_taxonomy( 'business_category', array( 'business_profile' ), $args );
 }
+
+/**
+ * Add Meta Boxes for Business Profile
+ */
+function business_showcase_add_meta_boxes() {
+    add_meta_box(
+        'business_profile_details',
+        __( 'Business Profile Details', 'business-showcase-networking-hub' ),
+        'business_showcase_render_meta_box',
+        'business_profile',
+        'normal',
+        'high'
+    );
+}
+add_action( 'add_meta_boxes', 'business_showcase_add_meta_boxes' );
+
+/**
+ * Render Meta Box Content
+ */
+function business_showcase_render_meta_box( $post ) {
+    // Add nonce for security
+    wp_nonce_field( 'business_showcase_meta_box', 'business_showcase_meta_box_nonce' );
+    
+    // Get existing values
+    $website_url = get_post_meta( $post->ID, '_business_website_url', true );
+    $contact_email = get_post_meta( $post->ID, '_business_contact_email', true );
+    $facebook_url = get_post_meta( $post->ID, '_business_facebook_url', true );
+    $twitter_url = get_post_meta( $post->ID, '_business_twitter_url', true );
+    $linkedin_url = get_post_meta( $post->ID, '_business_linkedin_url', true );
+    $services = get_post_meta( $post->ID, '_business_services', true );
+    
+    // Services options
+    $services_options = array(
+        'consulting' => __( 'Consulting', 'business-showcase-networking-hub' ),
+        'design' => __( 'Design', 'business-showcase-networking-hub' ),
+        'development' => __( 'Development', 'business-showcase-networking-hub' ),
+        'marketing' => __( 'Marketing', 'business-showcase-networking-hub' ),
+        'sales' => __( 'Sales', 'business-showcase-networking-hub' ),
+        'support' => __( 'Support', 'business-showcase-networking-hub' ),
+        'training' => __( 'Training', 'business-showcase-networking-hub' ),
+        'other' => __( 'Other', 'business-showcase-networking-hub' ),
+    );
+    
+    if ( ! is_array( $services ) ) {
+        $services = array();
+    }
+    ?>
+    
+    <div class="business-showcase-meta-box">
+        
+        <!-- Services -->
+        <div class="business-meta-field">
+            <label class="business-meta-label">
+                <strong><?php esc_html_e( 'Services Offered', 'business-showcase-networking-hub' ); ?></strong>
+            </label>
+            <div class="business-meta-checkboxes">
+                <?php foreach ( $services_options as $value => $label ) : ?>
+                    <label style="display: block; margin: 5px 0;">
+                        <input type="checkbox" 
+                               name="business_services[]" 
+                               value="<?php echo esc_attr( $value ); ?>"
+                               <?php checked( in_array( $value, $services ), true ); ?> />
+                        <?php echo esc_html( $label ); ?>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        
+        <hr style="margin: 20px 0;" />
+        
+        <!-- Website URL -->
+        <div class="business-meta-field">
+            <label class="business-meta-label" for="business_website_url">
+                <strong><?php esc_html_e( 'Website URL', 'business-showcase-networking-hub' ); ?></strong>
+            </label>
+            <input type="url" 
+                   id="business_website_url" 
+                   name="business_website_url" 
+                   value="<?php echo esc_attr( $website_url ); ?>" 
+                   style="width: 100%; max-width: 500px;" 
+                   placeholder="https://example.com" />
+            <p class="description"><?php esc_html_e( 'Enter the business website URL', 'business-showcase-networking-hub' ); ?></p>
+        </div>
+        
+        <!-- Contact Email -->
+        <div class="business-meta-field">
+            <label class="business-meta-label" for="business_contact_email">
+                <strong><?php esc_html_e( 'Contact Email', 'business-showcase-networking-hub' ); ?></strong>
+            </label>
+            <input type="email" 
+                   id="business_contact_email" 
+                   name="business_contact_email" 
+                   value="<?php echo esc_attr( $contact_email ); ?>" 
+                   style="width: 100%; max-width: 500px;" 
+                   placeholder="contact@example.com" />
+            <p class="description"><?php esc_html_e( 'Enter the business contact email', 'business-showcase-networking-hub' ); ?></p>
+        </div>
+        
+        <hr style="margin: 20px 0;" />
+        
+        <h3><?php esc_html_e( 'Social Media Links', 'business-showcase-networking-hub' ); ?></h3>
+        
+        <!-- Facebook URL -->
+        <div class="business-meta-field">
+            <label class="business-meta-label" for="business_facebook_url">
+                <strong><?php esc_html_e( 'Facebook URL', 'business-showcase-networking-hub' ); ?></strong>
+            </label>
+            <input type="url" 
+                   id="business_facebook_url" 
+                   name="business_facebook_url" 
+                   value="<?php echo esc_attr( $facebook_url ); ?>" 
+                   style="width: 100%; max-width: 500px;" 
+                   placeholder="https://facebook.com/yourpage" />
+        </div>
+        
+        <!-- Twitter URL -->
+        <div class="business-meta-field">
+            <label class="business-meta-label" for="business_twitter_url">
+                <strong><?php esc_html_e( 'Twitter URL', 'business-showcase-networking-hub' ); ?></strong>
+            </label>
+            <input type="url" 
+                   id="business_twitter_url" 
+                   name="business_twitter_url" 
+                   value="<?php echo esc_attr( $twitter_url ); ?>" 
+                   style="width: 100%; max-width: 500px;" 
+                   placeholder="https://twitter.com/yourhandle" />
+        </div>
+        
+        <!-- LinkedIn URL -->
+        <div class="business-meta-field">
+            <label class="business-meta-label" for="business_linkedin_url">
+                <strong><?php esc_html_e( 'LinkedIn URL', 'business-showcase-networking-hub' ); ?></strong>
+            </label>
+            <input type="url" 
+                   id="business_linkedin_url" 
+                   name="business_linkedin_url" 
+                   value="<?php echo esc_attr( $linkedin_url ); ?>" 
+                   style="width: 100%; max-width: 500px;" 
+                   placeholder="https://linkedin.com/in/yourprofile" />
+        </div>
+        
+    </div>
+    
+    <style>
+        .business-showcase-meta-box {
+            padding: 10px 0;
+        }
+        .business-meta-field {
+            margin-bottom: 20px;
+        }
+        .business-meta-label {
+            display: block;
+            margin-bottom: 8px;
+        }
+        .business-meta-checkboxes {
+            margin-top: 8px;
+        }
+    </style>
+    
+    <?php
+}
+
+/**
+ * Save Meta Box Data
+ */
+function business_showcase_save_meta_box( $post_id ) {
+    // Check if nonce is set
+    if ( ! isset( $_POST['business_showcase_meta_box_nonce'] ) ) {
+        return;
+    }
+    
+    // Verify nonce
+    if ( ! wp_verify_nonce( $_POST['business_showcase_meta_box_nonce'], 'business_showcase_meta_box' ) ) {
+        return;
+    }
+    
+    // Check if this is an autosave
+    if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+        return;
+    }
+    
+    // Check user permissions
+    if ( ! current_user_can( 'edit_post', $post_id ) ) {
+        return;
+    }
+    
+    // Sanitize and save Services (checkbox group)
+    if ( isset( $_POST['business_services'] ) && is_array( $_POST['business_services'] ) ) {
+        $services = array_map( 'sanitize_text_field', $_POST['business_services'] );
+        update_post_meta( $post_id, '_business_services', $services );
+    } else {
+        delete_post_meta( $post_id, '_business_services' );
+    }
+    
+    // Sanitize and save Website URL
+    if ( isset( $_POST['business_website_url'] ) ) {
+        $website_url = esc_url_raw( $_POST['business_website_url'] );
+        update_post_meta( $post_id, '_business_website_url', $website_url );
+    }
+    
+    // Sanitize and save Contact Email
+    if ( isset( $_POST['business_contact_email'] ) ) {
+        $contact_email = sanitize_email( $_POST['business_contact_email'] );
+        update_post_meta( $post_id, '_business_contact_email', $contact_email );
+    }
+    
+    // Sanitize and save Facebook URL
+    if ( isset( $_POST['business_facebook_url'] ) ) {
+        $facebook_url = esc_url_raw( $_POST['business_facebook_url'] );
+        update_post_meta( $post_id, '_business_facebook_url', $facebook_url );
+    }
+    
+    // Sanitize and save Twitter URL
+    if ( isset( $_POST['business_twitter_url'] ) ) {
+        $twitter_url = esc_url_raw( $_POST['business_twitter_url'] );
+        update_post_meta( $post_id, '_business_twitter_url', $twitter_url );
+    }
+    
+    // Sanitize and save LinkedIn URL
+    if ( isset( $_POST['business_linkedin_url'] ) ) {
+        $linkedin_url = esc_url_raw( $_POST['business_linkedin_url'] );
+        update_post_meta( $post_id, '_business_linkedin_url', $linkedin_url );
+    }
+}
+add_action( 'save_post_business_profile', 'business_showcase_save_meta_box' );
