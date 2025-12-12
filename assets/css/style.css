@@ -572,3 +572,327 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Success Stories Block */
+.success-stories-block {
+    width: 100%;
+    margin: 40px 0;
+}
+
+.success-stories-container {
+    display: grid;
+    gap: 30px;
+}
+
+/* Grid Layout */
+.success-stories-block.layout-grid .success-stories-container.columns-2 {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.success-stories-block.layout-grid .success-stories-container.columns-3 {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.success-stories-block.layout-grid .success-stories-container.columns-4 {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+/* List Layout */
+.success-stories-block.layout-list .success-stories-container {
+    grid-template-columns: 1fr;
+}
+
+.success-stories-block.layout-list .success-story-item {
+    display: flex;
+    gap: 25px;
+    align-items: flex-start;
+}
+
+.success-stories-block.layout-list .story-logo {
+    flex-shrink: 0;
+    width: 150px;
+}
+
+/* Cards Layout */
+.success-stories-block.layout-cards .success-stories-container.columns-2 {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.success-stories-block.layout-cards .success-stories-container.columns-3 {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.success-stories-block.layout-cards .success-stories-container.columns-4 {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.success-stories-block.layout-cards .success-story-item {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Success Story Item */
+.success-story-item {
+    background: #fff;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.success-story-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+    border-color: #2271b1;
+}
+
+/* Top 3 Rankings */
+.success-story-item.rank-1 {
+    border-color: #ffd700;
+    background: linear-gradient(135deg, #fff 0%, #fffbea 100%);
+}
+
+.success-story-item.rank-2 {
+    border-color: #c0c0c0;
+}
+
+.success-story-item.rank-3 {
+    border-color: #cd7f32;
+}
+
+/* Rank Badge */
+.story-rank-badge {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: #2271b1;
+    color: #fff;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+    z-index: 10;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.rank-1 .story-rank-badge {
+    background: #ffd700;
+    color: #000;
+}
+
+.rank-2 .story-rank-badge {
+    background: #c0c0c0;
+    color: #000;
+}
+
+.rank-3 .story-rank-badge {
+    background: #cd7f32;
+    color: #fff;
+}
+
+/* Story Logo */
+.story-logo {
+    width: 100%;
+    height: 220px;
+    overflow: hidden;
+    background: #f5f5f5;
+}
+
+.story-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+}
+
+.success-story-item:hover .story-logo img {
+    transform: scale(1.08);
+}
+
+/* Story Content */
+.story-content {
+    padding: 25px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.story-title {
+    margin: 0 0 10px 0;
+    font-size: 1.5em;
+    line-height: 1.3;
+}
+
+.story-title a {
+    color: #333;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.story-title a:hover {
+    color: #2271b1;
+}
+
+.story-category {
+    color: #2271b1;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+}
+
+/* Story Rating */
+.story-rating {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.story-rating .star-rating-display {
+    font-size: 18px;
+}
+
+.story-rating .rating-value {
+    font-weight: 700;
+    font-size: 20px;
+    color: #333;
+}
+
+.story-rating .review-count {
+    font-weight: 400;
+    font-size: 14px;
+    color: #888;
+}
+
+/* Story Excerpt */
+.story-excerpt {
+    color: #666;
+    line-height: 1.7;
+    margin-bottom: 20px;
+    flex-grow: 1;
+}
+
+/* Story Actions */
+.story-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: auto;
+}
+
+.story-btn {
+    display: inline-block;
+    padding: 12px 24px;
+    background: #2271b1;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    text-align: center;
+    flex: 1;
+}
+
+.story-btn:hover {
+    background: #135e96;
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.story-btn-secondary {
+    display: inline-block;
+    padding: 12px 24px;
+    background: transparent;
+    color: #2271b1;
+    text-decoration: none;
+    border: 2px solid #2271b1;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    text-align: center;
+    flex: 1;
+}
+
+.story-btn-secondary:hover {
+    background: #2271b1;
+    color: #fff;
+}
+
+/* No Success Stories */
+.no-success-stories {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 18px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    border: 2px dashed #ddd;
+}
+
+/* Responsive for Success Stories */
+@media (max-width: 1024px) {
+    .success-stories-block.layout-grid .success-stories-container.columns-4,
+    .success-stories-block.layout-cards .success-stories-container.columns-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .success-stories-block.layout-grid .success-stories-container.columns-3,
+    .success-stories-block.layout-cards .success-stories-container.columns-3 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .success-stories-block.layout-grid .success-stories-container,
+    .success-stories-block.layout-cards .success-stories-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .success-stories-block.layout-list .success-story-item {
+        flex-direction: column;
+    }
+    
+    .success-stories-block.layout-list .story-logo {
+        width: 100%;
+        height: 200px;
+    }
+    
+    .story-logo {
+        height: 180px;
+    }
+    
+    .story-actions {
+        flex-direction: column;
+    }
+    
+    .story-btn,
+    .story-btn-secondary {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .story-content {
+        padding: 20px;
+    }
+    
+    .story-title {
+        font-size: 1.3em;
+    }
+    
+    .story-rank-badge {
+        width: 35px;
+        height: 35px;
+        font-size: 14px;
+    }
+}

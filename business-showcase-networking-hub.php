@@ -2050,10 +2050,19 @@ function business_showcase_register_block() {
         return;
     }
     
-    // Register block script
+    // Register Business Directory block script
     wp_register_script(
         'business-showcase-block',
         BUSINESS_SHOWCASE_PLUGIN_URL . 'assets/js/block-business-directory.js',
+        array( 'wp-blocks', 'wp-element', 'wp-block-editor', 'wp-components', 'wp-i18n', 'wp-server-side-render' ),
+        BUSINESS_SHOWCASE_VERSION,
+        true
+    );
+    
+    // Register Success Stories block script
+    wp_register_script(
+        'business-showcase-success-stories-block',
+        BUSINESS_SHOWCASE_PLUGIN_URL . 'assets/js/block-success-stories.js',
         array( 'wp-blocks', 'wp-element', 'wp-block-editor', 'wp-components', 'wp-i18n', 'wp-server-side-render' ),
         BUSINESS_SHOWCASE_VERSION,
         true
@@ -2085,7 +2094,7 @@ function business_showcase_register_block() {
         )
     );
     
-    // Register block
+    // Register Business Directory block
     register_block_type( 'business-showcase/directory', array(
         'editor_script' => 'business-showcase-block',
         'attributes' => array(
@@ -2111,6 +2120,38 @@ function business_showcase_register_block() {
             ),
         ),
         'render_callback' => 'business_showcase_render_block',
+    ) );
+    
+    // Register Success Stories block
+    register_block_type( 'business-showcase/success-stories', array(
+        'editor_script' => 'business-showcase-success-stories-block',
+        'attributes' => array(
+            'numberOfItems' => array(
+                'type' => 'number',
+                'default' => 6,
+            ),
+            'orderBy' => array(
+                'type' => 'string',
+                'default' => 'rating',
+            ),
+            'layoutStyle' => array(
+                'type' => 'string',
+                'default' => 'grid',
+            ),
+            'columns' => array(
+                'type' => 'number',
+                'default' => 3,
+            ),
+            'showRating' => array(
+                'type' => 'boolean',
+                'default' => true,
+            ),
+            'showReviewCount' => array(
+                'type' => 'boolean',
+                'default' => true,
+            ),
+        ),
+        'render_callback' => 'business_showcase_render_success_stories_block',
     ) );
 }
 add_action( 'init', 'business_showcase_register_block' );
@@ -2150,6 +2191,167 @@ function business_showcase_render_block( $attributes ) {
     </div>
     <?php
     
+    return ob_get_clean();
+}
+
+/**
+ * Render Success Stories Block Callback
+ */
+function business_showcase_render_success_stories_block( $attributes ) {
+    $atts = shortcode_atts( array(
+        'numberOfItems' => 6,
+        'orderBy' => 'rating',
+        'layoutStyle' => 'grid',
+        'columns' => 3,
+        'showRating' => true,
+        'showReviewCount' => true,
+    ), $attributes );
+    
+    // Build query arguments
+    $query_args = array(
+        'post_type' => 'business_profile',
+        'posts_per_page' => intval( $atts['numberOfItems'] ),
+        'post_status' => 'publish',
+    );
+    
+    // Set ordering
+    $order_by = sanitize_text_field( $atts['orderBy'] );
+    
+    if ( $order_by === 'rating' ) {
+        $query_args['meta_key'] = '_business_star_rating';
+        $query_args['orderby'] = 'meta_value_num';
+        $query_args['order'] = 'DESC';
+        // Only show businesses with ratings
+        $query_args['meta_query'] = array(
+            array(
+                'key' => '_business_star_rating',
+                'compare' => 'EXISTS',
+            ),
+            array(
+                'key' => '_business_star_rating',
+                'value' => 0,
+                'compare' => '>',
+                'type' => 'DECIMAL',
+            ),
+        );
+    } elseif ( $order_by === 'review_count' ) {
+        $query_args['meta_key'] = '_business_rating_count';
+        $query_args['orderby'] = 'meta_value_num';
+        $query_args['order'] = 'DESC';
+        $query_args['meta_query'] = array(
+            array(
+                'key' => '_business_rating_count',
+                'compare' => 'EXISTS',
+            ),
+        );
+    } else {
+        $query_args['orderby'] = 'date';
+        $query_args['order'] = 'DESC';
+    }
+    
+    $query = new WP_Query( $query_args );
+    
+    if ( ! $query->have_posts() ) {
+        return '<p class="no-success-stories">' . esc_html__( 'No success stories found.', 'business-showcase-networking-hub' ) . '</p>';
+    }
+    
+    $layout_style = sanitize_text_field( $atts['layoutStyle'] );
+    $columns = intval( $atts['columns'] );
+    $show_rating = (bool) $atts['showRating'];
+    $show_review_count = (bool) $atts['showReviewCount'];
+    
+    ob_start();
+    ?>
+    
+    <div class="success-stories-block layout-<?php echo esc_attr( $layout_style ); ?>">
+        
+        <div class="success-stories-container <?php echo ( $layout_style !== 'list' ) ? 'columns-' . esc_attr( $columns ) : ''; ?>">
+            
+            <?php 
+            $story_count = 1;
+            while ( $query->have_posts() ) : $query->the_post();
+                $post_id = get_the_ID();
+                $average_rating = get_post_meta( $post_id, '_business_star_rating', true );
+                $rating_count = get_post_meta( $post_id, '_business_rating_count', true );
+                $website_url = get_post_meta( $post_id, '_business_website_url', true );
+                $categories = get_the_terms( $post_id, 'business_category' );
+            ?>
+            
+            <article class="success-story-item rank-<?php echo esc_attr( $story_count ); ?>">
+                
+                <?php if ( $story_count <= 3 ) : ?>
+                    <span class="story-rank-badge">#<?php echo esc_html( $story_count ); ?></span>
+                <?php endif; ?>
+                
+                <?php if ( has_post_thumbnail() ) : ?>
+                    <div class="story-logo">
+                        <a href="<?php the_permalink(); ?>">
+                            <?php the_post_thumbnail( 'medium' ); ?>
+                        </a>
+                    </div>
+                <?php endif; ?>
+                
+                <div class="story-content">
+                    
+                    <h3 class="story-title">
+                        <a href="<?php the_permalink(); ?>"><?php the_title(); ?></a>
+                    </h3>
+                    
+                    <?php if ( $categories && ! is_wp_error( $categories ) ) : ?>
+                        <div class="story-category">
+                            <?php echo esc_html( $categories[0]->name ); ?>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <?php if ( $show_rating && $average_rating ) : ?>
+                        <div class="story-rating">
+                            <?php echo business_showcase_display_star_rating( floatval( $average_rating ) ); ?>
+                            <span class="rating-value">
+                                <?php echo esc_html( number_format( floatval( $average_rating ), 1 ) ); ?>
+                                <?php if ( $show_review_count && $rating_count ) : ?>
+                                    <span class="review-count">
+                                        (<?php 
+                                        printf(
+                                            esc_html( _n( '%d review', '%d reviews', intval( $rating_count ), 'business-showcase-networking-hub' ) ),
+                                            intval( $rating_count )
+                                        );
+                                        ?>)
+                                    </span>
+                                <?php endif; ?>
+                            </span>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <div class="story-excerpt">
+                        <?php echo wp_trim_words( get_the_excerpt(), 20 ); ?>
+                    </div>
+                    
+                    <div class="story-actions">
+                        <a href="<?php the_permalink(); ?>" class="story-btn">
+                            <?php esc_html_e( 'View Success Story', 'business-showcase-networking-hub' ); ?>
+                        </a>
+                        <?php if ( $website_url ) : ?>
+                            <a href="<?php echo esc_url( $website_url ); ?>" target="_blank" class="story-btn-secondary">
+                                <?php esc_html_e( 'Visit Website', 'business-showcase-networking-hub' ); ?>
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                    
+                </div>
+                
+            </article>
+            
+            <?php 
+            $story_count++;
+            endwhile; 
+            wp_reset_postdata();
+            ?>
+            
+        </div>
+        
+    </div>
+    
+    <?php
     return ob_get_clean();
 }
 
