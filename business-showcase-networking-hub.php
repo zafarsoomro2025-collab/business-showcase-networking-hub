@@ -1585,3 +1585,360 @@ function business_showcase_admin_column_styles() {
     }
 }
 add_action( 'admin_head', 'business_showcase_admin_column_styles' );
+
+/**
+ * Add Export Admin Menu Page
+ */
+function business_showcase_add_export_menu() {
+    add_submenu_page(
+        'edit.php?post_type=business_profile',
+        __( 'Export Business Profiles', 'business-showcase-networking-hub' ),
+        __( 'Export to CSV', 'business-showcase-networking-hub' ),
+        'manage_options',
+        'business-profile-export',
+        'business_showcase_render_export_page'
+    );
+}
+add_action( 'admin_menu', 'business_showcase_add_export_menu' );
+
+/**
+ * Render Export Admin Page
+ */
+function business_showcase_render_export_page() {
+    // Check user capabilities
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'business-showcase-networking-hub' ) );
+    }
+    
+    // Get business profile statistics
+    $total_profiles = wp_count_posts( 'business_profile' );
+    $published_count = isset( $total_profiles->publish ) ? $total_profiles->publish : 0;
+    
+    $featured_query = new WP_Query( array(
+        'post_type' => 'business_profile',
+        'post_status' => 'publish',
+        'meta_key' => '_business_is_featured',
+        'meta_value' => '1',
+        'fields' => 'ids',
+        'posts_per_page' => -1,
+    ) );
+    $featured_count = $featured_query->found_posts;
+    
+    ?>
+    <div class="wrap">
+        <h1><?php esc_html_e( 'Export Business Profiles', 'business-showcase-networking-hub' ); ?></h1>
+        
+        <div class="export-stats-container">
+            <div class="export-stat-card">
+                <div class="stat-icon">
+                    <span class="dashicons dashicons-building"></span>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number"><?php echo esc_html( number_format_i18n( $published_count ) ); ?></div>
+                    <div class="stat-label"><?php esc_html_e( 'Total Profiles', 'business-showcase-networking-hub' ); ?></div>
+                </div>
+            </div>
+            
+            <div class="export-stat-card">
+                <div class="stat-icon featured">
+                    <span class="dashicons dashicons-star-filled"></span>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number"><?php echo esc_html( number_format_i18n( $featured_count ) ); ?></div>
+                    <div class="stat-label"><?php esc_html_e( 'Featured Profiles', 'business-showcase-networking-hub' ); ?></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="export-form-container">
+            <h2><?php esc_html_e( 'Export Options', 'business-showcase-networking-hub' ); ?></h2>
+            
+            <form method="post" action="">
+                <?php wp_nonce_field( 'business_showcase_export_csv', 'business_showcase_export_nonce' ); ?>
+                
+                <table class="form-table">
+                    <tr>
+                        <th scope="row">
+                            <label for="export_type">
+                                <?php esc_html_e( 'Export Type', 'business-showcase-networking-hub' ); ?>
+                            </label>
+                        </th>
+                        <td>
+                            <select name="export_type" id="export_type" class="regular-text">
+                                <option value="all"><?php esc_html_e( 'All Business Profiles', 'business-showcase-networking-hub' ); ?></option>
+                                <option value="featured"><?php esc_html_e( 'Featured Only', 'business-showcase-networking-hub' ); ?></option>
+                            </select>
+                            <p class="description">
+                                <?php esc_html_e( 'Choose which profiles to export', 'business-showcase-networking-hub' ); ?>
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">
+                            <?php esc_html_e( 'Fields to Export', 'business-showcase-networking-hub' ); ?>
+                        </th>
+                        <td>
+                            <p class="description">
+                                <?php esc_html_e( 'All available fields will be exported:', 'business-showcase-networking-hub' ); ?>
+                            </p>
+                            <ul style="list-style: disc; margin-left: 20px; margin-top: 10px;">
+                                <li><?php esc_html_e( 'Business Name', 'business-showcase-networking-hub' ); ?></li>
+                                <li><?php esc_html_e( 'Description', 'business-showcase-networking-hub' ); ?></li>
+                                <li><?php esc_html_e( 'Logo URL', 'business-showcase-networking-hub' ); ?></li>
+                                <li><?php esc_html_e( 'Categories', 'business-showcase-networking-hub' ); ?></li>
+                                <li><?php esc_html_e( 'Services', 'business-showcase-networking-hub' ); ?></li>
+                                <li><?php esc_html_e( 'Website URL', 'business-showcase-networking-hub' ); ?></li>
+                                <li><?php esc_html_e( 'Contact Email', 'business-showcase-networking-hub' ); ?></li>
+                                <li><?php esc_html_e( 'Facebook URL', 'business-showcase-networking-hub' ); ?></li>
+                                <li><?php esc_html_e( 'Twitter URL', 'business-showcase-networking-hub' ); ?></li>
+                                <li><?php esc_html_e( 'LinkedIn URL', 'business-showcase-networking-hub' ); ?></li>
+                                <li><?php esc_html_e( 'Featured Status', 'business-showcase-networking-hub' ); ?></li>
+                                <li><?php esc_html_e( 'Average Rating', 'business-showcase-networking-hub' ); ?></li>
+                                <li><?php esc_html_e( 'Review Count', 'business-showcase-networking-hub' ); ?></li>
+                                <li><?php esc_html_e( 'Publish Date', 'business-showcase-networking-hub' ); ?></li>
+                            </ul>
+                        </td>
+                    </tr>
+                </table>
+                
+                <p class="submit">
+                    <button type="submit" name="export_csv" class="button button-primary button-hero">
+                        <span class="dashicons dashicons-download" style="margin-top: 6px;"></span>
+                        <?php esc_html_e( 'Export to CSV', 'business-showcase-networking-hub' ); ?>
+                    </button>
+                </p>
+            </form>
+        </div>
+        
+        <style>
+            .export-stats-container {
+                display: flex;
+                gap: 20px;
+                margin: 30px 0;
+            }
+            
+            .export-stat-card {
+                background: #fff;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                padding: 20px;
+                display: flex;
+                gap: 20px;
+                align-items: center;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+                flex: 1;
+            }
+            
+            .stat-icon {
+                width: 60px;
+                height: 60px;
+                background: #2271b1;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            }
+            
+            .stat-icon.featured {
+                background: #ffc107;
+            }
+            
+            .stat-icon .dashicons {
+                font-size: 32px;
+                width: 32px;
+                height: 32px;
+                color: #fff;
+            }
+            
+            .stat-content {
+                flex: 1;
+            }
+            
+            .stat-number {
+                font-size: 32px;
+                font-weight: 700;
+                color: #333;
+                line-height: 1;
+                margin-bottom: 5px;
+            }
+            
+            .stat-label {
+                font-size: 14px;
+                color: #666;
+            }
+            
+            .export-form-container {
+                background: #fff;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                padding: 30px;
+                margin-top: 30px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            }
+            
+            .export-form-container h2 {
+                margin-top: 0;
+                padding-bottom: 15px;
+                border-bottom: 2px solid #2271b1;
+            }
+            
+            .button-hero .dashicons {
+                display: inline-block;
+            }
+        </style>
+    </div>
+    <?php
+}
+
+/**
+ * Handle CSV Export
+ */
+function business_showcase_handle_csv_export() {
+    // Check if export form is submitted
+    if ( ! isset( $_POST['export_csv'] ) ) {
+        return;
+    }
+    
+    // Verify nonce
+    if ( ! isset( $_POST['business_showcase_export_nonce'] ) || 
+         ! wp_verify_nonce( $_POST['business_showcase_export_nonce'], 'business_showcase_export_csv' ) ) {
+        wp_die( esc_html__( 'Security check failed.', 'business-showcase-networking-hub' ) );
+    }
+    
+    // Check user capabilities
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_die( esc_html__( 'You do not have sufficient permissions.', 'business-showcase-networking-hub' ) );
+    }
+    
+    // Get export type
+    $export_type = isset( $_POST['export_type'] ) ? sanitize_text_field( $_POST['export_type'] ) : 'all';
+    
+    // Query arguments
+    $args = array(
+        'post_type' => 'business_profile',
+        'post_status' => 'publish',
+        'posts_per_page' => -1,
+        'orderby' => 'date',
+        'order' => 'DESC',
+    );
+    
+    // Add featured filter if needed
+    if ( $export_type === 'featured' ) {
+        $args['meta_key'] = '_business_is_featured';
+        $args['meta_value'] = '1';
+    }
+    
+    $query = new WP_Query( $args );
+    
+    if ( ! $query->have_posts() ) {
+        wp_die( esc_html__( 'No business profiles found to export.', 'business-showcase-networking-hub' ) );
+    }
+    
+    // Set headers for CSV download
+    header( 'Content-Type: text/csv; charset=utf-8' );
+    header( 'Content-Disposition: attachment; filename=business-profiles-' . date( 'Y-m-d-H-i-s' ) . '.csv' );
+    header( 'Pragma: no-cache' );
+    header( 'Expires: 0' );
+    
+    // Create output stream
+    $output = fopen( 'php://output', 'w' );
+    
+    // Add BOM for UTF-8
+    fprintf( $output, chr(0xEF).chr(0xBB).chr(0xBF) );
+    
+    // CSV Headers
+    $headers = array(
+        'ID',
+        'Business Name',
+        'Description',
+        'Logo URL',
+        'Categories',
+        'Services',
+        'Website URL',
+        'Contact Email',
+        'Facebook URL',
+        'Twitter URL',
+        'LinkedIn URL',
+        'Featured',
+        'Average Rating',
+        'Review Count',
+        'Publish Date',
+        'Profile URL',
+    );
+    
+    fputcsv( $output, $headers );
+    
+    // Export data
+    while ( $query->have_posts() ) {
+        $query->the_post();
+        $post_id = get_the_ID();
+        
+        // Get all meta data
+        $services = get_post_meta( $post_id, '_business_services', true );
+        $website_url = get_post_meta( $post_id, '_business_website_url', true );
+        $contact_email = get_post_meta( $post_id, '_business_contact_email', true );
+        $facebook_url = get_post_meta( $post_id, '_business_facebook_url', true );
+        $twitter_url = get_post_meta( $post_id, '_business_twitter_url', true );
+        $linkedin_url = get_post_meta( $post_id, '_business_linkedin_url', true );
+        $is_featured = get_post_meta( $post_id, '_business_is_featured', true );
+        $average_rating = get_post_meta( $post_id, '_business_star_rating', true );
+        $rating_count = get_post_meta( $post_id, '_business_rating_count', true );
+        
+        // Get logo URL
+        $logo_url = get_the_post_thumbnail_url( $post_id, 'full' );
+        
+        // Get categories
+        $categories = get_the_terms( $post_id, 'business_category' );
+        $category_names = array();
+        if ( $categories && ! is_wp_error( $categories ) ) {
+            foreach ( $categories as $category ) {
+                $category_names[] = $category->name;
+            }
+        }
+        
+        // Format services
+        $service_names = array();
+        if ( ! empty( $services ) && is_array( $services ) ) {
+            $service_labels = business_showcase_get_service_labels();
+            foreach ( $services as $service ) {
+                if ( isset( $service_labels[ $service ] ) ) {
+                    $service_names[] = $service_labels[ $service ];
+                }
+            }
+        }
+        
+        // Get description (strip HTML tags)
+        $description = wp_strip_all_tags( get_the_content() );
+        $description = str_replace( array( "\r", "\n" ), ' ', $description );
+        
+        // Prepare row data
+        $row = array(
+            $post_id,
+            get_the_title(),
+            $description,
+            $logo_url ? $logo_url : '',
+            implode( ', ', $category_names ),
+            implode( ', ', $service_names ),
+            $website_url ? $website_url : '',
+            $contact_email ? $contact_email : '',
+            $facebook_url ? $facebook_url : '',
+            $twitter_url ? $twitter_url : '',
+            $linkedin_url ? $linkedin_url : '',
+            $is_featured == '1' ? 'Yes' : 'No',
+            $average_rating ? number_format( floatval( $average_rating ), 2 ) : '',
+            $rating_count ? $rating_count : '0',
+            get_the_date( 'Y-m-d H:i:s' ),
+            get_permalink(),
+        );
+        
+        fputcsv( $output, $row );
+    }
+    
+    fclose( $output );
+    wp_reset_postdata();
+    
+    exit;
+}
+add_action( 'admin_init', 'business_showcase_handle_csv_export' );
