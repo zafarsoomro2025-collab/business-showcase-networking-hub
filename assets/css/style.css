@@ -517,3 +517,58 @@
         justify-content: center;
     }
 }
+
+/* Gutenberg Block Styles */
+.business-showcase-block {
+    width: 100%;
+    margin: 20px 0;
+}
+
+.business-block-grid {
+    display: grid;
+    gap: 25px;
+}
+
+.business-block-grid.columns-1 {
+    grid-template-columns: 1fr;
+}
+
+.business-block-grid.columns-2 {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.business-block-grid.columns-3 {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.business-block-grid.columns-4 {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+/* Block Editor Styles */
+.wp-block-business-showcase-directory {
+    margin: 20px 0;
+}
+
+.wp-block-business-showcase-directory .business-card {
+    pointer-events: none;
+}
+
+/* Responsive for Block */
+@media (max-width: 1024px) {
+    .business-block-grid.columns-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .business-block-grid.columns-3 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .business-block-grid.columns-2,
+    .business-block-grid.columns-3,
+    .business-block-grid.columns-4 {
+        grid-template-columns: 1fr;
+    }
+}

@@ -2040,3 +2040,132 @@ function business_showcase_bulk_action_admin_notices() {
     }
 }
 add_action( 'admin_notices', 'business_showcase_bulk_action_admin_notices' );
+
+/**
+ * Register Gutenberg Block
+ */
+function business_showcase_register_block() {
+    // Check if Gutenberg is available
+    if ( ! function_exists( 'register_block_type' ) ) {
+        return;
+    }
+    
+    // Register block script
+    wp_register_script(
+        'business-showcase-block',
+        BUSINESS_SHOWCASE_PLUGIN_URL . 'assets/js/block-business-directory.js',
+        array( 'wp-blocks', 'wp-element', 'wp-block-editor', 'wp-components', 'wp-i18n', 'wp-server-side-render' ),
+        BUSINESS_SHOWCASE_VERSION,
+        true
+    );
+    
+    // Get categories for block
+    $categories = get_terms( array(
+        'taxonomy' => 'business_category',
+        'hide_empty' => false,
+    ) );
+    
+    $category_list = array();
+    if ( ! empty( $categories ) && ! is_wp_error( $categories ) ) {
+        foreach ( $categories as $category ) {
+            $category_list[] = array(
+                'name' => $category->name,
+                'slug' => $category->slug,
+            );
+        }
+    }
+    
+    // Localize script with data
+    wp_localize_script(
+        'business-showcase-block',
+        'businessShowcaseBlock',
+        array(
+            'categories' => $category_list,
+            'services' => business_showcase_get_all_services(),
+        )
+    );
+    
+    // Register block
+    register_block_type( 'business-showcase/directory', array(
+        'editor_script' => 'business-showcase-block',
+        'attributes' => array(
+            'postsPerPage' => array(
+                'type' => 'number',
+                'default' => 12,
+            ),
+            'category' => array(
+                'type' => 'string',
+                'default' => '',
+            ),
+            'service' => array(
+                'type' => 'string',
+                'default' => '',
+            ),
+            'featuredOnly' => array(
+                'type' => 'boolean',
+                'default' => false,
+            ),
+            'columns' => array(
+                'type' => 'number',
+                'default' => 3,
+            ),
+        ),
+        'render_callback' => 'business_showcase_render_block',
+    ) );
+}
+add_action( 'init', 'business_showcase_register_block' );
+
+/**
+ * Render Block Callback
+ */
+function business_showcase_render_block( $attributes ) {
+    $atts = shortcode_atts( array(
+        'postsPerPage' => 12,
+        'category' => '',
+        'service' => '',
+        'featuredOnly' => false,
+        'columns' => 3,
+    ), $attributes );
+    
+    // Convert camelCase to snake_case for consistency with shortcode
+    $args = array(
+        'posts_per_page' => intval( $atts['postsPerPage'] ),
+        'category' => sanitize_text_field( $atts['category'] ),
+        'service' => sanitize_text_field( $atts['service'] ),
+        'featured_only' => (bool) $atts['featuredOnly'],
+    );
+    
+    // Get business grid HTML
+    $grid_html = business_showcase_get_business_grid( $args );
+    
+    $columns = intval( $atts['columns'] );
+    $columns_class = 'columns-' . $columns;
+    
+    ob_start();
+    ?>
+    <div class="business-showcase-block">
+        <div class="business-grid business-block-grid <?php echo esc_attr( $columns_class ); ?>">
+            <?php echo $grid_html; ?>
+        </div>
+    </div>
+    <?php
+    
+    return ob_get_clean();
+}
+
+/**
+ * Add Block Category
+ */
+function business_showcase_block_category( $categories ) {
+    return array_merge(
+        $categories,
+        array(
+            array(
+                'slug' => 'business-showcase',
+                'title' => __( 'Business Showcase', 'business-showcase-networking-hub' ),
+                'icon' => 'building',
+            ),
+        )
+    );
+}
+add_filter( 'block_categories_all', 'business_showcase_block_category', 10, 1 );
