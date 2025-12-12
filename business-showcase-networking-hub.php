@@ -252,6 +252,15 @@ function business_showcase_add_meta_boxes() {
         'normal',
         'high'
     );
+    
+    add_meta_box(
+        'business_profile_featured',
+        __( 'Featured Business', 'business-showcase-networking-hub' ),
+        'business_showcase_render_featured_meta_box',
+        'business_profile',
+        'side',
+        'high'
+    );
 }
 add_action( 'add_meta_boxes', 'business_showcase_add_meta_boxes' );
 
@@ -402,6 +411,33 @@ function business_showcase_render_meta_box( $post ) {
 }
 
 /**
+ * Render Featured Business Meta Box
+ */
+function business_showcase_render_featured_meta_box( $post ) {
+    // Add nonce for security
+    wp_nonce_field( 'business_showcase_featured_meta_box', 'business_showcase_featured_meta_box_nonce' );
+    
+    // Get existing value
+    $is_featured = get_post_meta( $post->ID, '_business_is_featured', true );
+    ?>
+    
+    <div class="business-featured-meta-box">
+        <label style="display: block; margin: 10px 0;">
+            <input type="checkbox" 
+                   name="business_is_featured" 
+                   value="1"
+                   <?php checked( $is_featured, '1' ); ?> />
+            <?php esc_html_e( 'Mark this business as featured', 'business-showcase-networking-hub' ); ?>
+        </label>
+        <p class="description">
+            <?php esc_html_e( 'Featured businesses will be displayed prominently on the showcase page.', 'business-showcase-networking-hub' ); ?>
+        </p>
+    </div>
+    
+    <?php
+}
+
+/**
  * Save Meta Box Data
  */
 function business_showcase_save_meta_box( $post_id ) {
@@ -435,6 +471,17 @@ function business_showcase_save_meta_box( $post_id ) {
     
     // Sanitize and save Website URL
     if ( isset( $_POST['business_website_url'] ) ) {
+    
+    // Save Featured Business checkbox
+    if ( isset( $_POST['business_showcase_featured_meta_box_nonce'] ) && 
+         wp_verify_nonce( $_POST['business_showcase_featured_meta_box_nonce'], 'business_showcase_featured_meta_box' ) ) {
+        
+        if ( isset( $_POST['business_is_featured'] ) ) {
+            update_post_meta( $post_id, '_business_is_featured', '1' );
+        } else {
+            update_post_meta( $post_id, '_business_is_featured', '0' );
+        }
+    }
         $website_url = esc_url_raw( $_POST['business_website_url'] );
         update_post_meta( $post_id, '_business_website_url', $website_url );
     }
