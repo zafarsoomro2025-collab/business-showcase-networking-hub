@@ -1,0 +1,381 @@
+/**
+ * Single Business Profile Template Styles
+ * Version: 1.0.0
+ */
+
+.business-profile-single {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+/* Header Section */
+.business-profile-header {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 40px;
+    padding-bottom: 30px;
+    border-bottom: 2px solid #e0e0e0;
+    flex-wrap: wrap;
+}
+
+.business-profile-logo {
+    flex: 0 0 250px;
+}
+
+.business-profile-logo img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.business-profile-header-content {
+    flex: 1;
+    min-width: 300px;
+}
+
+.business-profile-title {
+    margin: 0 0 15px 0;
+    font-size: 2.5em;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.featured-badge {
+    display: inline-block;
+    padding: 5px 15px;
+    background: #ffc107;
+    color: #000;
+    font-size: 0.4em;
+    font-weight: 600;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+/* Star Rating */
+.business-star-rating {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.star-rating-display {
+    display: inline-flex;
+    gap: 3px;
+    font-size: 20px;
+}
+
+.star {
+    color: #ddd;
+}
+
+.star.filled {
+    color: #ffc107;
+}
+
+.star.half {
+    position: relative;
+    color: #ddd;
+}
+
+.star.half::before {
+    content: '★';
+    position: absolute;
+    left: 0;
+    color: #ffc107;
+    width: 50%;
+    overflow: hidden;
+}
+
+.rating-value {
+    font-weight: 600;
+    color: #666;
+    font-size: 16px;
+}
+
+/* Categories */
+.business-profile-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.business-category-tag {
+    display: inline-block;
+    padding: 6px 14px;
+    background: #e3f2fd;
+    color: #1976d2;
+    border-radius: 4px;
+    font-size: 14px;
+    text-decoration: none;
+    transition: background 0.3s ease;
+}
+
+.business-category-tag:hover {
+    background: #bbdefb;
+}
+
+/* Main Layout */
+.business-profile-container {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 40px;
+}
+
+.business-profile-content {
+    min-width: 0;
+}
+
+/* Description Section */
+.business-profile-description {
+    margin-bottom: 40px;
+}
+
+.business-profile-description h2,
+.business-profile-services h2 {
+    font-size: 1.8em;
+    margin-bottom: 20px;
+    color: #333;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #2271b1;
+}
+
+.business-description-content {
+    line-height: 1.8;
+    color: #555;
+    font-size: 16px;
+}
+
+.business-description-content p {
+    margin-bottom: 15px;
+}
+
+/* Services Section */
+.business-profile-services {
+    margin-bottom: 40px;
+}
+
+.services-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.service-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 15px;
+    background: #f9f9f9;
+    border-radius: 6px;
+    border-left: 3px solid #2271b1;
+    font-size: 15px;
+    transition: background 0.3s ease;
+}
+
+.service-item:hover {
+    background: #f0f0f0;
+}
+
+.service-icon {
+    color: #2271b1;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+/* Sidebar */
+.business-profile-sidebar {
+    min-width: 0;
+}
+
+.sidebar-widget {
+    background: #fff;
+    padding: 25px;
+    margin-bottom: 25px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-widget h3 {
+    margin: 0 0 20px 0;
+    font-size: 1.4em;
+    color: #333;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+/* Contact Widget */
+.contact-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: #f9f9f9;
+    border-radius: 6px;
+    transition: background 0.3s ease;
+}
+
+.contact-item:hover {
+    background: #f0f0f0;
+}
+
+.contact-item:last-child {
+    margin-bottom: 0;
+}
+
+.contact-icon {
+    font-size: 20px;
+}
+
+.contact-item a {
+    color: #2271b1;
+    text-decoration: none;
+    word-break: break-all;
+}
+
+.contact-item a:hover {
+    text-decoration: underline;
+}
+
+/* Social Links */
+.social-links {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.social-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 15px;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    color: #fff;
+}
+
+.social-link svg {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.social-link span {
+    font-weight: 500;
+}
+
+.social-link.facebook {
+    background: #1877f2;
+}
+
+.social-link.facebook:hover {
+    background: #145dbf;
+}
+
+.social-link.twitter {
+    background: #1da1f2;
+}
+
+.social-link.twitter:hover {
+    background: #0d8bd9;
+}
+
+.social-link.linkedin {
+    background: #0077b5;
+}
+
+.social-link.linkedin:hover {
+    background: #005885;
+}
+
+/* CTA Widget */
+.cta-widget {
+    background: linear-gradient(135deg, #2271b1 0%, #135e96 100%);
+    text-align: center;
+}
+
+.cta-button {
+    display: block;
+    padding: 15px 30px;
+    background: #fff;
+    color: #2271b1;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+.cta-button:hover {
+    background: #f0f0f0;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+    .business-profile-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .business-profile-sidebar {
+        order: 2;
+    }
+    
+    .services-list {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .business-profile-single {
+        padding: 20px 15px;
+    }
+    
+    .business-profile-header {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .business-profile-logo {
+        flex: 0 0 auto;
+        max-width: 200px;
+        margin: 0 auto;
+    }
+    
+    .business-profile-title {
+        font-size: 1.8em;
+    }
+    
+    .services-list {
+        grid-template-columns: 1fr;
+    }
+    
+    .sidebar-widget {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .business-profile-title {
+        font-size: 1.5em;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .business-star-rating {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

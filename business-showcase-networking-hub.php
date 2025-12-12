@@ -83,6 +83,17 @@ function business_showcase_enqueue_scripts() {
         'all'
     );
     
+    // Enqueue single business profile CSS on single pages
+    if ( is_singular( 'business_profile' ) ) {
+        wp_enqueue_style(
+            'business-showcase-single-style',
+            BUSINESS_SHOWCASE_PLUGIN_URL . 'assets/css/single-business-profile.css',
+            array(),
+            BUSINESS_SHOWCASE_VERSION,
+            'all'
+        );
+    }
+    
     // Enqueue JavaScript
     wp_enqueue_script(
         'business-showcase-script',
@@ -777,3 +788,128 @@ function business_showcase_filter_businesses() {
 }
 add_action( 'wp_ajax_business_showcase_filter', 'business_showcase_filter_businesses' );
 add_action( 'wp_ajax_nopriv_business_showcase_filter', 'business_showcase_filter_businesses' );
+
+/**
+ * Load Custom Template for Single Business Profile
+ */
+function business_showcase_load_template( $template ) {
+    if ( is_singular( 'business_profile' ) ) {
+        $plugin_template = BUSINESS_SHOWCASE_PLUGIN_DIR . 'templates/single-business-profile.php';
+        
+        if ( file_exists( $plugin_template ) ) {
+            return $plugin_template;
+        }
+    }
+    
+    return $template;
+}
+add_filter( 'template_include', 'business_showcase_load_template' );
+
+/**
+ * Add Star Rating Meta Box
+ */
+function business_showcase_add_rating_meta_box() {
+    add_meta_box(
+        'business_profile_rating',
+        __( 'Business Rating', 'business-showcase-networking-hub' ),
+        'business_showcase_render_rating_meta_box',
+        'business_profile',
+        'side',
+        'default'
+    );
+}
+add_action( 'add_meta_boxes', 'business_showcase_add_rating_meta_box' );
+
+/**
+ * Render Star Rating Meta Box
+ */
+function business_showcase_render_rating_meta_box( $post ) {
+    wp_nonce_field( 'business_showcase_rating_meta_box', 'business_showcase_rating_meta_box_nonce' );
+    
+    $star_rating = get_post_meta( $post->ID, '_business_star_rating', true );
+    ?>
+    
+    <div class="business-rating-meta-box">
+        <label for="business_star_rating">
+            <strong><?php esc_html_e( 'Star Rating (0-5)', 'business-showcase-networking-hub' ); ?></strong>
+        </label>
+        <input type="number" 
+               id="business_star_rating" 
+               name="business_star_rating" 
+               value="<?php echo esc_attr( $star_rating ); ?>" 
+               min="0" 
+               max="5" 
+               step="0.5"
+               style="width: 100%;" />
+        <p class="description">
+            <?php esc_html_e( 'Enter a rating between 0 and 5 (e.g., 4.5)', 'business-showcase-networking-hub' ); ?>
+        </p>
+    </div>
+    
+    <?php
+}
+
+/**
+ * Save Star Rating
+ */
+function business_showcase_save_rating( $post_id ) {
+    if ( ! isset( $_POST['business_showcase_rating_meta_box_nonce'] ) ) {
+        return;
+    }
+    
+    if ( ! wp_verify_nonce( $_POST['business_showcase_rating_meta_box_nonce'], 'business_showcase_rating_meta_box' ) ) {
+        return;
+    }
+    
+    if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+        return;
+    }
+    
+    if ( ! current_user_can( 'edit_post', $post_id ) ) {
+        return;
+    }
+    
+    if ( isset( $_POST['business_star_rating'] ) ) {
+        $rating = floatval( $_POST['business_star_rating'] );
+        
+        // Validate rating is between 0 and 5
+        if ( $rating < 0 ) {
+            $rating = 0;
+        } elseif ( $rating > 5 ) {
+            $rating = 5;
+        }
+        
+        update_post_meta( $post_id, '_business_star_rating', $rating );
+    }
+}
+add_action( 'save_post_business_profile', 'business_showcase_save_rating' );
+
+/**
+ * Display Star Rating HTML
+ */
+function business_showcase_display_star_rating( $rating ) {
+    $output = '<div class="star-rating-display">';
+    
+    $full_stars = floor( $rating );
+    $half_star = ( $rating - $full_stars ) >= 0.5 ? 1 : 0;
+    $empty_stars = 5 - $full_stars - $half_star;
+    
+    // Full stars
+    for ( $i = 0; $i < $full_stars; $i++ ) {
+        $output .= '<span class="star filled">★</span>';
+    }
+    
+    // Half star
+    if ( $half_star ) {
+        $output .= '<span class="star half">★</span>';
+    }
+    
+    // Empty stars
+    for ( $i = 0; $i < $empty_stars; $i++ ) {
+        $output .= '<span class="star">★</span>';
+    }
+    
+    $output .= '</div>';
+    
+    return $output;
+}
