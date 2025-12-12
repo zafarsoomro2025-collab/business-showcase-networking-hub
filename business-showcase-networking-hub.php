@@ -1023,3 +1023,215 @@ function business_showcase_display_star_rating( $rating ) {
     
     return $output;
 }
+
+/**
+ * Add Rating Field to Comment Form for Business Profile
+ */
+function business_showcase_add_rating_field( $comment_id ) {
+    if ( ! is_singular( 'business_profile' ) ) {
+        return;
+    }
+    ?>
+    <div class="comment-form-rating">
+        <label for="rating">
+            <?php esc_html_e( 'Your Rating', 'business-showcase-networking-hub' ); ?> 
+            <span class="required">*</span>
+        </label>
+        <div class="star-rating-input" id="star-rating-input">
+            <input type="radio" name="rating" id="rating-5" value="5" required />
+            <label for="rating-5" class="star" title="5 stars">★</label>
+            
+            <input type="radio" name="rating" id="rating-4" value="4" required />
+            <label for="rating-4" class="star" title="4 stars">★</label>
+            
+            <input type="radio" name="rating" id="rating-3" value="3" required />
+            <label for="rating-3" class="star" title="3 stars">★</label>
+            
+            <input type="radio" name="rating" id="rating-2" value="2" required />
+            <label for="rating-2" class="star" title="2 stars">★</label>
+            
+            <input type="radio" name="rating" id="rating-1" value="1" required />
+            <label for="rating-1" class="star" title="1 star">★</label>
+        </div>
+        <p class="description">
+            <?php esc_html_e( 'Click on the stars to rate this business', 'business-showcase-networking-hub' ); ?>
+        </p>
+    </div>
+    <?php
+}
+add_action( 'comment_form_logged_in_after', 'business_showcase_add_rating_field' );
+add_action( 'comment_form_after_fields', 'business_showcase_add_rating_field' );
+
+/**
+ * Validate Rating Field
+ */
+function business_showcase_validate_rating( $commentdata ) {
+    if ( get_post_type( $commentdata['comment_post_ID'] ) !== 'business_profile' ) {
+        return $commentdata;
+    }
+    
+    if ( ! isset( $_POST['rating'] ) || empty( $_POST['rating'] ) ) {
+        wp_die( 
+            esc_html__( 'Error: You must select a rating to submit a review.', 'business-showcase-networking-hub' ),
+            esc_html__( 'Rating Required', 'business-showcase-networking-hub' ),
+            array( 'back_link' => true )
+        );
+    }
+    
+    $rating = intval( $_POST['rating'] );
+    
+    if ( $rating < 1 || $rating > 5 ) {
+        wp_die( 
+            esc_html__( 'Error: Invalid rating value.', 'business-showcase-networking-hub' ),
+            esc_html__( 'Invalid Rating', 'business-showcase-networking-hub' ),
+            array( 'back_link' => true )
+        );
+    }
+    
+    return $commentdata;
+}
+add_filter( 'preprocess_comment', 'business_showcase_validate_rating' );
+
+/**
+ * Save Rating as Comment Meta
+ */
+function business_showcase_save_rating( $comment_id ) {
+    if ( isset( $_POST['rating'] ) && ! empty( $_POST['rating'] ) ) {
+        $rating = intval( $_POST['rating'] );
+        
+        if ( $rating >= 1 && $rating <= 5 ) {
+            add_comment_meta( $comment_id, 'rating', $rating );
+            
+            // Update post average rating
+            $comment = get_comment( $comment_id );
+            if ( $comment ) {
+                business_showcase_update_post_rating( $comment->comment_post_ID );
+            }
+        }
+    }
+}
+add_action( 'comment_post', 'business_showcase_save_rating' );
+
+/**
+ * Update Post Average Rating
+ */
+function business_showcase_update_post_rating( $post_id ) {
+    if ( get_post_type( $post_id ) !== 'business_profile' ) {
+        return;
+    }
+    
+    // Get all approved comments for this post
+    $comments = get_comments( array(
+        'post_id' => $post_id,
+        'status' => 'approve',
+        'type' => 'comment',
+    ) );
+    
+    $total_rating = 0;
+    $rating_count = 0;
+    
+    foreach ( $comments as $comment ) {
+        $rating = get_comment_meta( $comment->comment_ID, 'rating', true );
+        if ( $rating ) {
+            $total_rating += intval( $rating );
+            $rating_count++;
+        }
+    }
+    
+    if ( $rating_count > 0 ) {
+        $average_rating = $total_rating / $rating_count;
+        update_post_meta( $post_id, '_business_star_rating', $average_rating );
+        update_post_meta( $post_id, '_business_rating_count', $rating_count );
+    } else {
+        delete_post_meta( $post_id, '_business_star_rating' );
+        delete_post_meta( $post_id, '_business_rating_count' );
+    }
+}
+
+/**
+ * Recalculate rating when comment status changes
+ */
+function business_showcase_recalculate_rating_on_status_change( $comment_id, $comment_status ) {
+    $comment = get_comment( $comment_id );
+    if ( $comment && get_post_type( $comment->comment_post_ID ) === 'business_profile' ) {
+        business_showcase_update_post_rating( $comment->comment_post_ID );
+    }
+}
+add_action( 'transition_comment_status', 'business_showcase_recalculate_rating_on_status_change', 10, 2 );
+
+/**
+ * Display Rating in Comments
+ */
+function business_showcase_display_comment_rating( $comment_text, $comment ) {
+    if ( get_post_type( $comment->comment_post_ID ) !== 'business_profile' ) {
+        return $comment_text;
+    }
+    
+    $rating = get_comment_meta( $comment->comment_ID, 'rating', true );
+    
+    if ( $rating ) {
+        $rating_html = '<div class="comment-rating">';
+        $rating_html .= business_showcase_display_star_rating( intval( $rating ) );
+        $rating_html .= '</div>';
+        
+        return $rating_html . $comment_text;
+    }
+    
+    return $comment_text;
+}
+add_filter( 'comment_text', 'business_showcase_display_comment_rating', 10, 2 );
+
+/**
+ * Get Business Rating Summary
+ */
+function business_showcase_get_rating_summary( $post_id ) {
+    $average_rating = get_post_meta( $post_id, '_business_star_rating', true );
+    $rating_count = get_post_meta( $post_id, '_business_rating_count', true );
+    
+    if ( ! $average_rating || ! $rating_count ) {
+        return array(
+            'average' => 0,
+            'count' => 0,
+            'html' => ''
+        );
+    }
+    
+    $average_rating = floatval( $average_rating );
+    $rating_count = intval( $rating_count );
+    
+    ob_start();
+    ?>
+    <div class="business-rating-summary">
+        <div class="rating-stars">
+            <?php echo business_showcase_display_star_rating( $average_rating ); ?>
+        </div>
+        <div class="rating-meta">
+            <span class="rating-average"><?php echo esc_html( number_format( $average_rating, 1 ) ); ?></span>
+            <span class="rating-separator">/</span>
+            <span class="rating-max">5</span>
+            <span class="rating-count">
+                <?php 
+                printf(
+                    esc_html( _n( '(%d review)', '(%d reviews)', $rating_count, 'business-showcase-networking-hub' ) ),
+                    $rating_count
+                );
+                ?>
+            </span>
+        </div>
+    </div>
+    <?php
+    
+    return array(
+        'average' => $average_rating,
+        'count' => $rating_count,
+        'html' => ob_get_clean()
+    );
+}
+
+/**
+ * Display Rating Summary (Helper Function)
+ */
+function business_showcase_display_rating_summary( $post_id ) {
+    $summary = business_showcase_get_rating_summary( $post_id );
+    echo $summary['html'];
+}

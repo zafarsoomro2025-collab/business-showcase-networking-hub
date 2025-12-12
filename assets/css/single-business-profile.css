@@ -379,3 +379,221 @@
         align-items: flex-start;
     }
 }
+
+/* Rating System Styles */
+.comment-form-rating {
+    margin-bottom: 20px;
+}
+
+.comment-form-rating label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.comment-form-rating .required {
+    color: #d63638;
+}
+
+/* Star Rating Input */
+.star-rating-input {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    gap: 5px;
+    font-size: 32px;
+    margin-bottom: 8px;
+}
+
+.star-rating-input input[type="radio"] {
+    display: none;
+}
+
+.star-rating-input label.star {
+    cursor: pointer;
+    color: #ddd;
+    transition: color 0.2s ease;
+}
+
+.star-rating-input label.star:hover,
+.star-rating-input label.star:hover ~ label.star,
+.star-rating-input input[type="radio"]:checked ~ label.star {
+    color: #ffc107;
+}
+
+.comment-form-rating .description {
+    font-size: 13px;
+    color: #666;
+    margin: 0;
+}
+
+/* Comment Rating Display */
+.comment-rating {
+    margin-bottom: 12px;
+}
+
+.comment-rating .star-rating-display {
+    font-size: 16px;
+}
+
+/* Business Rating Summary */
+.business-rating-summary {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.rating-stars {
+    display: flex;
+    align-items: center;
+}
+
+.rating-meta {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    font-size: 16px;
+}
+
+.rating-average {
+    font-size: 24px;
+    font-weight: 700;
+    color: #333;
+}
+
+.rating-separator,
+.rating-max {
+    font-size: 18px;
+    color: #666;
+}
+
+.rating-count {
+    font-size: 14px;
+    color: #888;
+    margin-left: 4px;
+}
+
+/* Reviews Section */
+.business-reviews-section {
+    max-width: 800px;
+    margin: 60px auto 0;
+    padding-top: 40px;
+    border-top: 2px solid #e0e0e0;
+}
+
+.business-reviews-section h2 {
+    font-size: 2em;
+    margin-bottom: 30px;
+    color: #333;
+}
+
+.no-reviews {
+    text-align: center;
+    padding: 40px 20px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    color: #666;
+    font-style: italic;
+}
+
+/* Comments List Styling */
+.business-reviews-section .commentlist {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.business-reviews-section .comment {
+    background: #fff;
+    padding: 25px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.business-reviews-section .comment-author {
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.business-reviews-section .comment-meta {
+    color: #888;
+    font-size: 13px;
+    margin-bottom: 12px;
+}
+
+.business-reviews-section .comment-text {
+    line-height: 1.7;
+    color: #555;
+}
+
+/* Comment Form Styling */
+.business-reviews-section .comment-respond {
+    background: #f9f9f9;
+    padding: 30px;
+    border-radius: 8px;
+    margin-top: 30px;
+}
+
+.business-reviews-section .comment-reply-title {
+    font-size: 1.5em;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.business-reviews-section .comment-form input[type="text"],
+.business-reviews-section .comment-form input[type="email"],
+.business-reviews-section .comment-form input[type="url"],
+.business-reviews-section .comment-form textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: inherit;
+}
+
+.business-reviews-section .comment-form textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.business-reviews-section .form-submit .submit {
+    background: #2271b1;
+    color: #fff;
+    padding: 12px 30px;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.business-reviews-section .form-submit .submit:hover {
+    background: #135e96;
+}
+
+/* Responsive Updates */
+@media (max-width: 768px) {
+    .business-rating-summary {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .star-rating-input {
+        font-size: 28px;
+    }
+    
+    .business-reviews-section {
+        margin-top: 40px;
+        padding-top: 30px;
+    }
+    
+    .business-reviews-section .comment-respond {
+        padding: 20px;
+    }
+}

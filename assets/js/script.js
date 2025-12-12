@@ -13,6 +13,7 @@
     $(document).ready(function() {
         businessShowcaseInit();
         initBusinessDirectory();
+        initStarRating();
     });
 
     /**
@@ -89,6 +90,46 @@
             complete: function() {
                 $loading.hide();
                 $grid.css('opacity', '1');
+            }
+        });
+    }
+
+    /**
+     * Initialize Star Rating Input
+     */
+    function initStarRating() {
+        if ($('.star-rating-input').length === 0) {
+            return;
+        }
+        
+        // Highlight stars on hover
+        $('.star-rating-input label.star').on('mouseenter', function() {
+            var $this = $(this);
+            $this.addClass('hover');
+            $this.nextAll('label.star').addClass('hover');
+        });
+        
+        $('.star-rating-input').on('mouseleave', function() {
+            $('.star-rating-input label.star').removeClass('hover');
+        });
+        
+        // Handle star click
+        $('.star-rating-input input[type="radio"]').on('change', function() {
+            var rating = $(this).val();
+            console.log('Rating selected:', rating);
+        });
+        
+        // Validate rating on form submit
+        $('#commentform').on('submit', function(e) {
+            if ($('.star-rating-input').length > 0) {
+                var ratingSelected = $('.star-rating-input input[type="radio"]:checked').length > 0;
+                
+                if (!ratingSelected) {
+                    e.preventDefault();
+                    alert('Please select a rating before submitting your review.');
+                    $('.star-rating-input').addClass('error');
+                    return false;
+                }
             }
         });
     }

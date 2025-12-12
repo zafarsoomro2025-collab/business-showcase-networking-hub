@@ -50,8 +50,7 @@ while ( have_posts() ) : the_post();
                     
                     <?php if ( ! empty( $star_rating ) && $star_rating > 0 ) : ?>
                         <div class="business-star-rating">
-                            <?php echo business_showcase_display_star_rating( floatval( $star_rating ) ); ?>
-                            <span class="rating-value"><?php echo esc_html( number_format( floatval( $star_rating ), 1 ) ); ?>/5</span>
+                            <?php business_showcase_display_rating_summary( $post_id ); ?>
                         </div>
                     <?php endif; ?>
                     
@@ -193,6 +192,21 @@ while ( have_posts() ) : the_post();
                 <?php endif; ?>
                 
             </aside>
+            
+        </div>
+        
+        <!-- Reviews Section -->
+        <div class="business-reviews-section">
+            
+            <h2><?php esc_html_e( 'Customer Reviews', 'business-showcase-networking-hub' ); ?></h2>
+            
+            <?php if ( comments_open() || get_comments_number() ) : ?>
+                <?php comments_template(); ?>
+            <?php else : ?>
+                <p class="no-reviews">
+                    <?php esc_html_e( 'Reviews are closed for this business.', 'business-showcase-networking-hub' ); ?>
+                </p>
+            <?php endif; ?>
             
         </div>
         
