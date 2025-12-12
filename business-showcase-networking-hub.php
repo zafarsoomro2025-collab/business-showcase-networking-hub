@@ -1235,3 +1235,82 @@ function business_showcase_display_rating_summary( $post_id ) {
     $summary = business_showcase_get_rating_summary( $post_id );
     echo $summary['html'];
 }
+
+/**
+ * Custom Comment Display Callback
+ */
+function business_showcase_custom_comment( $comment, $args, $depth ) {
+    $GLOBALS['comment'] = $comment;
+    $rating = get_comment_meta( $comment->comment_ID, 'rating', true );
+    ?>
+    <li id="comment-<?php comment_ID(); ?>" <?php comment_class( 'review-item' ); ?>>
+        <article class="review-content">
+            
+            <div class="review-header">
+                <div class="reviewer-avatar">
+                    <?php echo get_avatar( $comment, 60 ); ?>
+                </div>
+                
+                <div class="reviewer-info">
+                    <div class="reviewer-name">
+                        <?php comment_author(); ?>
+                    </div>
+                    
+                    <?php if ( $rating ) : ?>
+                        <div class="reviewer-rating">
+                            <?php echo business_showcase_display_star_rating( intval( $rating ) ); ?>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <div class="review-date">
+                        <?php
+                        printf(
+                            esc_html__( '%s ago', 'business-showcase-networking-hub' ),
+                            human_time_diff( get_comment_time( 'U' ), current_time( 'timestamp' ) )
+                        );
+                        ?>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="review-text">
+                <?php comment_text(); ?>
+            </div>
+            
+            <?php if ( $comment->comment_approved == '0' ) : ?>
+                <p class="review-awaiting-moderation">
+                    <?php esc_html_e( 'Your review is awaiting moderation.', 'business-showcase-networking-hub' ); ?>
+                </p>
+            <?php endif; ?>
+            
+            <div class="review-actions">
+                <?php
+                comment_reply_link( array_merge( $args, array(
+                    'depth'     => $depth,
+                    'max_depth' => $args['max_depth'],
+                    'reply_text' => esc_html__( 'Reply', 'business-showcase-networking-hub' ),
+                ) ) );
+                ?>
+                
+                <?php edit_comment_link( esc_html__( 'Edit', 'business-showcase-networking-hub' ), ' | ' ); ?>
+            </div>
+            
+        </article>
+    <?php
+}
+
+/**
+ * Load Custom Comments Template
+ */
+function business_showcase_custom_comments_template( $template ) {
+    if ( get_post_type() === 'business_profile' ) {
+        $custom_template = BUSINESS_SHOWCASE_PLUGIN_DIR . 'templates/comments-business-profile.php';
+        
+        if ( file_exists( $custom_template ) ) {
+            return $custom_template;
+        }
+    }
+    
+    return $template;
+}
+add_filter( 'comments_template', 'business_showcase_custom_comments_template' );

@@ -198,15 +198,9 @@ while ( have_posts() ) : the_post();
         <!-- Reviews Section -->
         <div class="business-reviews-section">
             
-            <h2><?php esc_html_e( 'Customer Reviews', 'business-showcase-networking-hub' ); ?></h2>
+            <h2 class="section-title"><?php esc_html_e( 'Customer Reviews', 'business-showcase-networking-hub' ); ?></h2>
             
-            <?php if ( comments_open() || get_comments_number() ) : ?>
-                <?php comments_template(); ?>
-            <?php else : ?>
-                <p class="no-reviews">
-                    <?php esc_html_e( 'Reviews are closed for this business.', 'business-showcase-networking-hub' ); ?>
-                </p>
-            <?php endif; ?>
+            <?php comments_template(); ?>
             
         </div>
         
