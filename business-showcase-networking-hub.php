@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Business Showcase & Networking Hub
  * Plugin URI: https://github.com/zafarsoomro2025-collab/business-showcase-networking-hub
- * Description: A comprehensive plugin for showcasing businesses and facilitating networking connections.
+ * Description: A comprehensive plugin for showcasing businesses with AJAX search, live filtering, star ratings, reviews, and networking connections.
  * Version: 1.0.0
  * Author: Zafar Soomro
  * Author URI: https://github.com/zafarsoomro2025-collab
@@ -55,8 +55,31 @@ function business_showcase_activate() {
     
     // Add activation timestamp
     add_option( 'business_showcase_activated', current_time( 'timestamp' ) );
+    
+    // Enable comments on all existing business profiles
+    business_showcase_enable_all_comments();
 }
 register_activation_hook( __FILE__, 'business_showcase_activate' );
+
+/**
+ * Enable Comments on All Existing Business Profiles
+ */
+function business_showcase_enable_all_comments() {
+    global $wpdb;
+    
+    // Update all business_profile posts to have comments open
+    $wpdb->query(
+        $wpdb->prepare(
+            "UPDATE {$wpdb->posts} 
+             SET comment_status = %s 
+             WHERE post_type = %s 
+             AND comment_status = %s",
+            'open',
+            'business_profile',
+            'closed'
+        )
+    );
+}
 
 /**
  * Deactivation Hook
@@ -118,11 +141,34 @@ function business_showcase_has_content() {
 
 /**
  * Enqueue CSS and JS Files
- * Assets are loaded conditionally only on pages with business showcase content
+ * JavaScript is always loaded for AJAX functionality, CSS is loaded conditionally
  */
 function business_showcase_enqueue_scripts() {
-    // Check if we should load assets
-    if ( ! business_showcase_has_content() ) {
+    $has_content = business_showcase_has_content();
+    
+    // Always enqueue JavaScript and AJAX for search functionality
+    wp_enqueue_script(
+        'business-showcase-script',
+        BUSINESS_SHOWCASE_PLUGIN_URL . 'assets/js/script.js',
+        array( 'jquery' ),
+        BUSINESS_SHOWCASE_VERSION,
+        true
+    );
+    
+    // Localize script for AJAX functionality (always needed for search)
+    wp_localize_script(
+        'business-showcase-script',
+        'businessShowcaseAjax',
+        array(
+            'ajaxurl' => admin_url( 'admin-ajax.php' ),
+            'nonce' => wp_create_nonce( 'business_showcase_nonce' ),
+            'loading_text' => __( 'Loading...', 'business-showcase-networking-hub' ),
+            'error_text' => __( 'Error loading businesses. Please try again.', 'business-showcase-networking-hub' ),
+        )
+    );
+    
+    // Only load CSS if we have business showcase content on the page
+    if ( ! $has_content ) {
         return;
     }
     
@@ -145,27 +191,6 @@ function business_showcase_enqueue_scripts() {
             'all'
         );
     }
-    
-    // Enqueue JavaScript with jQuery dependency for AJAX filtering and star rating interactions
-    wp_enqueue_script(
-        'business-showcase-script',
-        BUSINESS_SHOWCASE_PLUGIN_URL . 'assets/js/script.js',
-        array( 'jquery' ),
-        BUSINESS_SHOWCASE_VERSION,
-        true
-    );
-    
-    // Localize script for AJAX functionality
-    wp_localize_script(
-        'business-showcase-script',
-        'businessShowcaseAjax',
-        array(
-            'ajaxurl' => admin_url( 'admin-ajax.php' ),
-            'nonce' => wp_create_nonce( 'business_showcase_nonce' ),
-            'loading_text' => __( 'Loading...', 'business-showcase-networking-hub' ),
-            'error_text' => __( 'Error loading businesses. Please try again.', 'business-showcase-networking-hub' ),
-        )
-    );
 }
 add_action( 'wp_enqueue_scripts', 'business_showcase_enqueue_scripts' );
 
@@ -290,7 +315,7 @@ function business_showcase_register_post_type() {
         'label'                 => __( 'Business Profile', 'business-showcase-networking-hub' ),
         'description'           => __( 'Business profiles for showcase and networking', 'business-showcase-networking-hub' ),
         'labels'                => $labels,
-        'supports'              => array( 'title', 'editor', 'thumbnail', 'custom-fields', 'excerpt', 'author', 'revisions' ),
+        'supports'              => array( 'title', 'editor', 'thumbnail', 'custom-fields', 'excerpt', 'author', 'revisions', 'comments' ),
         'taxonomies'            => array( 'business_category' ),
         'hierarchical'          => false,
         'public'                => true,
@@ -311,6 +336,21 @@ function business_showcase_register_post_type() {
     
     register_post_type( 'business_profile', $args );
 }
+
+/**
+ * Enable Comments by Default for Business Profiles
+ */
+function business_showcase_enable_comments_by_default( $data, $postarr ) {
+    // Only apply to business_profile post type
+    if ( isset( $data['post_type'] ) && $data['post_type'] === 'business_profile' ) {
+        // For new posts (no ID yet) or if comment_status is not set
+        if ( empty( $postarr['ID'] ) || ( isset( $postarr['ID'] ) && get_post_status( $postarr['ID'] ) === 'auto-draft' ) ) {
+            $data['comment_status'] = 'open';
+        }
+    }
+    return $data;
+}
+add_filter( 'wp_insert_post_data', 'business_showcase_enable_comments_by_default', 10, 2 );
 
 /**
  * Register Custom Taxonomy: Business Category
@@ -652,6 +692,43 @@ function business_showcase_directory_shortcode( $atts ) {
     ?>
     <div class="business-showcase-directory" id="business-directory">
         
+        <!-- Search Bar -->
+        <div class="business-search-container">
+            <div class="search-input-wrapper">
+                <input 
+                    type="text" 
+                    id="business-search" 
+                    class="business-search-input" 
+                    placeholder="<?php esc_attr_e( 'Search businesses by name, category, services, or rating...', 'business-showcase-networking-hub' ); ?>"
+                    autocomplete="off"
+                />
+                <span class="search-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                </span>
+                <button type="button" id="clear-search" class="clear-search-btn" style="display: none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Live Search Results -->
+            <div id="search-results" class="search-results-dropdown" style="display: none;"></div>
+            
+            <!-- Search Info -->
+            <div id="search-info" class="search-info" style="display: none;">
+                <span class="search-query"></span>
+                <span class="search-count"></span>
+                <button type="button" id="clear-search-filter" class="clear-search-filter-btn">
+                    <?php esc_html_e( 'Clear Search', 'business-showcase-networking-hub' ); ?>
+                </button>
+            </div>
+        </div>
+        
         <!-- Filters -->
         <div class="business-directory-filters">
             <div class="filter-group">
@@ -827,6 +904,7 @@ function business_showcase_get_business_grid( $args = array() ) {
         'category' => '',
         'service' => '',
         'featured_only' => false,
+        'search' => '',
     );
     
     $args = wp_parse_args( $args, $defaults );
@@ -839,6 +917,11 @@ function business_showcase_get_business_grid( $args = array() ) {
         'orderby' => 'date',
         'order' => 'DESC',
     );
+    
+    // Add search query
+    if ( ! empty( $args['search'] ) ) {
+        $query_args['s'] = sanitize_text_field( $args['search'] );
+    }
     
     // Filter by category
     if ( ! empty( $args['category'] ) ) {
@@ -988,11 +1071,13 @@ function business_showcase_filter_businesses() {
     
     $category = isset( $_POST['category'] ) ? sanitize_text_field( $_POST['category'] ) : '';
     $service = isset( $_POST['service'] ) ? sanitize_text_field( $_POST['service'] ) : '';
+    $search = isset( $_POST['search'] ) ? sanitize_text_field( $_POST['search'] ) : '';
     
     $args = array(
         'posts_per_page' => 12,
         'category' => $category,
         'service' => $service,
+        'search' => $search,
     );
     
     $html = business_showcase_get_business_grid( $args );
@@ -1002,6 +1087,121 @@ function business_showcase_filter_businesses() {
 }
 add_action( 'wp_ajax_business_showcase_filter', 'business_showcase_filter_businesses' );
 add_action( 'wp_ajax_nopriv_business_showcase_filter', 'business_showcase_filter_businesses' );
+
+/**
+ * AJAX Handler for live search
+ */
+function business_showcase_live_search() {
+    // Log that function was called
+    error_log( 'business_showcase_live_search called' );
+    
+    check_ajax_referer( 'business_showcase_nonce', 'nonce' );
+    
+    $search_query = isset( $_POST['search'] ) ? sanitize_text_field( $_POST['search'] ) : '';
+    
+    error_log( 'Search query: ' . $search_query );
+    
+    if ( empty( $search_query ) || strlen( $search_query ) < 2 ) {
+        wp_send_json_success( array( 
+            'results' => array(),
+            'count' => 0,
+            'message' => __( 'Please enter at least 2 characters', 'business-showcase-networking-hub' )
+        ) );
+    }
+    
+    // Build query arguments
+    $query_args = array(
+        'post_type' => 'business_profile',
+        'post_status' => 'publish',
+        'posts_per_page' => 10,
+        'orderby' => 'relevance',
+    );
+    
+    // Search in title and content
+    $query_args['s'] = $search_query;
+    
+    // Add meta query for custom fields and tax query for categories
+    $meta_query = array( 'relation' => 'OR' );
+    $tax_query = array( 'relation' => 'OR' );
+    
+    // Search in categories
+    $categories = get_terms( array(
+        'taxonomy' => 'business_category',
+        'name__like' => $search_query,
+        'hide_empty' => true,
+    ) );
+    
+    if ( ! empty( $categories ) && ! is_wp_error( $categories ) ) {
+        $category_ids = wp_list_pluck( $categories, 'term_id' );
+        $tax_query[] = array(
+            'taxonomy' => 'business_category',
+            'field' => 'term_id',
+            'terms' => $category_ids,
+        );
+    }
+    
+    if ( count( $tax_query ) > 1 ) {
+        $query_args['tax_query'] = $tax_query;
+    }
+    
+    // Execute query
+    $query = new WP_Query( $query_args );
+    
+    $results = array();
+    
+    if ( $query->have_posts() ) {
+        while ( $query->have_posts() ) {
+            $query->the_post();
+            $post_id = get_the_ID();
+            
+            // Get rating summary
+            $rating_summary = business_showcase_get_rating_summary( $post_id );
+            
+            // Get categories
+            $categories = get_the_terms( $post_id, 'business_category' );
+            $category_names = array();
+            if ( $categories && ! is_wp_error( $categories ) ) {
+                foreach ( $categories as $category ) {
+                    $category_names[] = $category->name;
+                }
+            }
+            
+            // Get services
+            $services = get_post_meta( $post_id, '_business_services', true );
+            $service_names = array();
+            if ( ! empty( $services ) && is_array( $services ) ) {
+                $service_labels = business_showcase_get_service_labels();
+                foreach ( $services as $service ) {
+                    if ( isset( $service_labels[ $service ] ) ) {
+                        $service_names[] = $service_labels[ $service ];
+                    }
+                }
+            }
+            
+            $results[] = array(
+                'id' => $post_id,
+                'title' => get_the_title(),
+                'url' => get_permalink(),
+                'excerpt' => wp_trim_words( get_the_excerpt(), 15 ),
+                'thumbnail' => get_the_post_thumbnail_url( $post_id, 'thumbnail' ),
+                'categories' => $category_names,
+                'services' => $service_names,
+                'rating' => $rating_summary['average'],
+                'rating_count' => $rating_summary['count'],
+                'is_featured' => get_post_meta( $post_id, '_business_is_featured', true ) == '1',
+            );
+        }
+        wp_reset_postdata();
+    }
+    
+    wp_send_json_success( array(
+        'results' => $results,
+        'count' => $query->found_posts,
+        'query' => $search_query,
+    ) );
+}
+add_action( 'wp_ajax_business_showcase_live_search', 'business_showcase_live_search' );
+add_action( 'wp_ajax_nopriv_business_showcase_live_search', 'business_showcase_live_search' );
 
 /**
  * Handle Business Contact Form Submission via AJAX
@@ -1355,7 +1555,7 @@ add_filter( 'preprocess_comment', 'business_showcase_validate_rating' );
 /**
  * Save Rating as Comment Meta
  */
-function business_showcase_save_rating( $comment_id ) {
+function business_showcase_save_comment_rating( $comment_id ) {
     if ( isset( $_POST['rating'] ) && ! empty( $_POST['rating'] ) ) {
         $rating = intval( $_POST['rating'] );
         
@@ -1370,7 +1570,7 @@ function business_showcase_save_rating( $comment_id ) {
         }
     }
 }
-add_action( 'comment_post', 'business_showcase_save_rating' );
+add_action( 'comment_post', 'business_showcase_save_comment_rating' );
 
 /**
  * Update Post Average Rating
@@ -2300,6 +2500,129 @@ function business_showcase_bulk_action_admin_notices() {
     }
 }
 add_action( 'admin_notices', 'business_showcase_bulk_action_admin_notices' );
+
+/**
+ * Handle Enable Comments Action
+ */
+function business_showcase_handle_enable_comments() {
+    // Check if action is set
+    if ( ! isset( $_GET['business_showcase_enable_comments'] ) ) {
+        return;
+    }
+    
+    // Verify nonce
+    if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( $_GET['_wpnonce'], 'enable_business_comments' ) ) {
+        wp_die( esc_html__( 'Security check failed', 'business-showcase-networking-hub' ) );
+    }
+    
+    // Check permissions
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_die( esc_html__( 'You do not have permission to perform this action', 'business-showcase-networking-hub' ) );
+    }
+    
+    // Enable comments on all business profiles
+    business_showcase_enable_all_comments();
+    
+    // Redirect with success message
+    $redirect_url = add_query_arg(
+        array(
+            'post_type' => 'business_profile',
+            'comments_enabled' => '1'
+        ),
+        admin_url( 'edit.php' )
+    );
+    
+    wp_redirect( $redirect_url );
+    exit;
+}
+add_action( 'admin_init', 'business_showcase_handle_enable_comments' );
+
+/**
+ * Show Notice to Enable Comments on Existing Posts
+ */
+function business_showcase_comments_admin_notice() {
+    // Only show on business profile pages
+    $screen = get_current_screen();
+    if ( ! $screen || $screen->post_type !== 'business_profile' ) {
+        return;
+    }
+    
+    // Check if already enabled
+    if ( isset( $_GET['comments_enabled'] ) && $_GET['comments_enabled'] == '1' ) {
+        ?>
+        <div class="notice notice-success is-dismissible">
+            <p><strong><?php esc_html_e( 'Success!', 'business-showcase-networking-hub' ); ?></strong> <?php esc_html_e( 'Reviews/comments have been enabled on all business profiles.', 'business-showcase-networking-hub' ); ?></p>
+        </div>
+        <?php
+        return;
+    }
+    
+    // Check if there are any business profiles with closed comments
+    global $wpdb;
+    $closed_count = $wpdb->get_var(
+        $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->posts} 
+             WHERE post_type = %s 
+             AND comment_status = %s",
+            'business_profile',
+            'closed'
+        )
+    );
+    
+    if ( $closed_count > 0 && ! get_option( 'business_showcase_comments_notice_dismissed' ) ) {
+        $enable_url = wp_nonce_url(
+            add_query_arg( 'business_showcase_enable_comments', '1' ),
+            'enable_business_comments'
+        );
+        ?>
+        <div class="notice notice-warning is-dismissible" data-dismissible="business-showcase-comments">
+            <p>
+                <strong><?php esc_html_e( 'Business Showcase:', 'business-showcase-networking-hub' ); ?></strong>
+                <?php
+                printf(
+                    esc_html__( 'You have %d business profile(s) with reviews/comments disabled.', 'business-showcase-networking-hub' ),
+                    intval( $closed_count )
+                );
+                ?>
+            </p>
+            <p>
+                <a href="<?php echo esc_url( $enable_url ); ?>" class="button button-primary">
+                    <?php esc_html_e( 'Enable Reviews on All Business Profiles', 'business-showcase-networking-hub' ); ?>
+                </a>
+                <button type="button" class="button button-secondary" onclick="businessShowcaseDismissNotice(this)">
+                    <?php esc_html_e( 'Dismiss', 'business-showcase-networking-hub' ); ?>
+                </button>
+            </p>
+        </div>
+        <script>
+        function businessShowcaseDismissNotice(button) {
+            var notice = button.closest('.notice');
+            notice.style.display = 'none';
+            
+            // Save dismissal via AJAX
+            jQuery.post(ajaxurl, {
+                action: 'business_showcase_dismiss_comments_notice',
+                nonce: '<?php echo wp_create_nonce( 'dismiss_comments_notice' ); ?>'
+            });
+        }
+        </script>
+        <?php
+    }
+}
+add_action( 'admin_notices', 'business_showcase_comments_admin_notice' );
+
+/**
+ * Handle Notice Dismissal
+ */
+function business_showcase_dismiss_comments_notice() {
+    if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'dismiss_comments_notice' ) ) {
+        wp_die();
+    }
+    
+    update_option( 'business_showcase_comments_notice_dismissed', true );
+    wp_send_json_success();
+}
+add_action( 'wp_ajax_business_showcase_dismiss_comments_notice', 'business_showcase_dismiss_comments_notice' );
 
 /**
  * Register Gutenberg Block

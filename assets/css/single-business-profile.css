@@ -121,6 +121,135 @@
     background: #bbdefb;
 }
 
+/* Social Sharing Buttons */
+.business-social-sharing {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 20px 0;
+    margin-bottom: 30px;
+    border-top: 1px solid #e0e0e0;
+    border-bottom: 1px solid #e0e0e0;
+    flex-wrap: wrap;
+}
+
+.business-social-sharing .sharing-label {
+    font-weight: 600;
+    color: #666;
+    font-size: 15px;
+}
+
+.sharing-buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.share-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: #fff;
+    background: #666;
+}
+
+.share-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.share-button:active {
+    transform: translateY(0);
+}
+
+.share-button svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Facebook Button */
+.share-facebook {
+    background: #1877f2;
+}
+
+.share-facebook:hover {
+    background: #166fe5;
+}
+
+/* Twitter Button */
+.share-twitter {
+    background: #1da1f2;
+}
+
+.share-twitter:hover {
+    background: #0d8bd9;
+}
+
+/* LinkedIn Button */
+.share-linkedin {
+    background: #0a66c2;
+}
+
+.share-linkedin:hover {
+    background: #004182;
+}
+
+/* Copy Link Button */
+.share-copy {
+    background: #5f6368;
+    color: #fff;
+}
+
+.share-copy:hover {
+    background: #3c4043;
+}
+
+.share-copy.copied {
+    background: #4caf50;
+}
+
+.share-copy.copied:hover {
+    background: #43a047;
+}
+
+/* Mobile Responsiveness for Share Buttons */
+@media (max-width: 768px) {
+    .business-social-sharing {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .sharing-buttons {
+        width: 100%;
+    }
+    
+    .share-button {
+        flex: 1;
+        justify-content: center;
+        min-width: calc(50% - 6px);
+    }
+}
+
+@media (max-width: 480px) {
+    .share-button {
+        min-width: 100%;
+        padding: 12px 18px;
+    }
+    
+    .share-button span {
+        flex: 1;
+    }
+}
+
 /* Main Layout */
 .business-profile-container {
     display: grid;
