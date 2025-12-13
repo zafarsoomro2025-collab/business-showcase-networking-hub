@@ -114,6 +114,11 @@ function business_showcase_has_content() {
         return true;
     }
     
+    // Always load on business profile archive pages
+    if ( is_post_type_archive( 'business_profile' ) ) {
+        return true;
+    }
+    
     // Always load on business category archive pages
     if ( is_tax( 'business_category' ) ) {
         return true;
@@ -180,6 +185,17 @@ function business_showcase_enqueue_scripts() {
         BUSINESS_SHOWCASE_VERSION,
         'all'
     );
+    
+    // Enqueue archive CSS on archive pages
+    if ( is_post_type_archive( 'business_profile' ) || is_tax( 'business_category' ) ) {
+        wp_enqueue_style(
+            'business-showcase-archive-style',
+            BUSINESS_SHOWCASE_PLUGIN_URL . 'assets/css/archive-business-profile.css',
+            array( 'business-showcase-style' ),
+            BUSINESS_SHOWCASE_VERSION,
+            'all'
+        );
+    }
     
     // Enqueue single business profile CSS on single pages
     if ( is_singular( 'business_profile' ) ) {
@@ -690,94 +706,132 @@ function business_showcase_directory_shortcode( $atts ) {
     $all_services = business_showcase_get_all_services();
     
     ?>
-    <div class="business-showcase-directory" id="business-directory">
-        
-        <!-- Search Bar -->
-        <div class="business-search-container">
-            <div class="search-input-wrapper">
-                <input 
-                    type="text" 
-                    id="business-search" 
-                    class="business-search-input" 
-                    placeholder="<?php esc_attr_e( 'Search businesses by name, category, services, or rating...', 'business-showcase-networking-hub' ); ?>"
-                    autocomplete="off"
-                />
-                <span class="search-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <path d="m21 21-4.35-4.35"></path>
-                    </svg>
-                </span>
-                <button type="button" id="clear-search" class="clear-search-btn" style="display: none;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
+    <div class="business-archive-wrapper">
+        <div class="business-archive-container">
+            
+            <!-- Search and Filter Section -->
+            <div class="business-archive-filters">
+                
+                <div class="filters-container">
+                    
+                    <!-- Search Bar -->
+                    <div class="business-search-wrapper">
+                        <div class="business-search-container">
+                            <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
+                            </svg>
+                            <input 
+                                type="text" 
+                                id="business-search" 
+                                class="business-search-input" 
+                                placeholder="<?php esc_attr_e( 'Search businesses...', 'business-showcase-networking-hub' ); ?>"
+                                autocomplete="off"
+                            >
+                            <button type="button" id="clear-search" class="clear-search-btn" style="display: none;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                            <div id="search-results" class="search-results-dropdown"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Filter Dropdowns -->
+                    <div class="filter-controls">
+                        
+                        <!-- Category Filter -->
+                        <div class="filter-item">
+                            <label for="category-filter" class="filter-label">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="14" width="7" height="7"></rect>
+                                    <rect x="3" y="14" width="7" height="7"></rect>
+                                </svg>
+                                <?php esc_html_e( 'Category', 'business-showcase-networking-hub' ); ?>
+                            </label>
+                            <select id="category-filter" class="filter-select">
+                                <option value=""><?php esc_html_e( 'All Categories', 'business-showcase-networking-hub' ); ?></option>
+                                <?php if ( ! empty( $categories ) && ! is_wp_error( $categories ) ) : ?>
+                                    <?php foreach ( $categories as $category ) : ?>
+                                        <option value="<?php echo esc_attr( $category->slug ); ?>">
+                                            <?php echo esc_html( $category->name ); ?> (<?php echo esc_html( $category->count ); ?>)
+                                        </option>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </select>
+                        </div>
+                        
+                        <!-- Service Filter -->
+                        <div class="filter-item">
+                            <label for="service-filter" class="filter-label">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                                </svg>
+                                <?php esc_html_e( 'Service', 'business-showcase-networking-hub' ); ?>
+                            </label>
+                            <select id="service-filter" class="filter-select">
+                                <option value=""><?php esc_html_e( 'All Services', 'business-showcase-networking-hub' ); ?></option>
+                                <?php if ( ! empty( $all_services ) ) : ?>
+                                    <?php foreach ( $all_services as $service ) : ?>
+                                        <option value="<?php echo esc_attr( $service ); ?>">
+                                            <?php echo esc_html( $service ); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </select>
+                        </div>
+                        
+                        <!-- Reset Button -->
+                        <button type="button" id="reset-filters" class="reset-filters-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+                                <path d="M21 3v5h-5"></path>
+                                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+                                <path d="M3 21v-5h5"></path>
+                            </svg>
+                            <?php esc_html_e( 'Reset', 'business-showcase-networking-hub' ); ?>
+                        </button>
+                        
+                    </div>
+                    
+                </div>
+                
+                <!-- Search Info -->
+                <div id="search-info" class="search-info-banner" style="display: none;">
+                    <div class="search-info-content">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        <span>
+                            <?php esc_html_e( 'Showing results for:', 'business-showcase-networking-hub' ); ?>
+                            <strong class="search-query"></strong>
+                        </span>
+                        <button type="button" id="clear-search-filter" class="clear-search-filter-btn">
+                            <?php esc_html_e( 'Clear search', 'business-showcase-networking-hub' ); ?>
+                        </button>
+                    </div>
+                </div>
+                
             </div>
             
-            <!-- Live Search Results -->
-            <div id="search-results" class="search-results-dropdown" style="display: none;"></div>
-            
-            <!-- Search Info -->
-            <div id="search-info" class="search-info" style="display: none;">
-                <span class="search-query"></span>
-                <span class="search-count"></span>
-                <button type="button" id="clear-search-filter" class="clear-search-filter-btn">
-                    <?php esc_html_e( 'Clear Search', 'business-showcase-networking-hub' ); ?>
-                </button>
-            </div>
-        </div>
-        
-        <!-- Filters -->
-        <div class="business-directory-filters">
-            <div class="filter-group">
-                <label for="category-filter">
-                    <?php esc_html_e( 'Filter by Category:', 'business-showcase-networking-hub' ); ?>
-                </label>
-                <select id="category-filter" class="business-filter">
-                    <option value=""><?php esc_html_e( 'All Categories', 'business-showcase-networking-hub' ); ?></option>
-                    <?php if ( ! empty( $categories ) && ! is_wp_error( $categories ) ) : ?>
-                        <?php foreach ( $categories as $category ) : ?>
-                            <option value="<?php echo esc_attr( $category->slug ); ?>">
-                                <?php echo esc_html( $category->name ); ?> (<?php echo intval( $category->count ); ?>)
-                            </option>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </select>
+            <!-- Loading indicator -->
+            <div id="business-loading" class="business-loading" style="display: none;">
+                <div class="loading-spinner"></div>
+                <p><?php esc_html_e( 'Loading businesses...', 'business-showcase-networking-hub' ); ?></p>
             </div>
             
-            <div class="filter-group">
-                <label for="service-filter">
-                    <?php esc_html_e( 'Filter by Service:', 'business-showcase-networking-hub' ); ?>
-                </label>
-                <select id="service-filter" class="business-filter">
-                    <option value=""><?php esc_html_e( 'All Services', 'business-showcase-networking-hub' ); ?></option>
-                    <?php foreach ( $all_services as $service_key => $service_label ) : ?>
-                        <option value="<?php echo esc_attr( $service_key ); ?>">
-                            <?php echo esc_html( $service_label ); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
+            <!-- Business Grid -->
+            <div id="business-directory" class="business-archive-grid-wrapper">
+                <div id="business-grid" class="business-grid">
+                    <?php echo wp_kses_post( business_showcase_get_business_grid( $atts ) ); ?>
+                </div>
             </div>
             
-            <div class="filter-group">
-                <button type="button" id="reset-filters" class="business-reset-btn">
-                    <?php esc_html_e( 'Reset Filters', 'business-showcase-networking-hub' ); ?>
-                </button>
-            </div>
         </div>
-        
-        <!-- Loading indicator -->
-        <div id="business-loading" class="business-loading" style="display: none;">
-            <p><?php esc_html_e( 'Loading...', 'business-showcase-networking-hub' ); ?></p>
-        </div>
-        
-        <!-- Business Grid -->
-        <div id="business-grid" class="business-grid">
-            <?php echo wp_kses_post( business_showcase_get_business_grid( $atts ) ); ?>
-        </div>
-        
     </div>
     <?php
     
@@ -1360,11 +1414,21 @@ add_action( 'wp_ajax_business_showcase_contact', 'business_showcase_handle_conta
 add_action( 'wp_ajax_nopriv_business_showcase_contact', 'business_showcase_handle_contact_form' );
 
 /**
- * Load Custom Template for Single Business Profile
+ * Load Custom Template for Single Business Profile and Archive
  */
 function business_showcase_load_template( $template ) {
+    // Single business profile template
     if ( is_singular( 'business_profile' ) ) {
         $plugin_template = BUSINESS_SHOWCASE_PLUGIN_DIR . 'templates/single-business-profile.php';
+        
+        if ( file_exists( $plugin_template ) ) {
+            return $plugin_template;
+        }
+    }
+    
+    // Business profile archive template
+    if ( is_post_type_archive( 'business_profile' ) || is_tax( 'business_category' ) ) {
+        $plugin_template = BUSINESS_SHOWCASE_PLUGIN_DIR . 'templates/archive-business-profile.php';
         
         if ( file_exists( $plugin_template ) ) {
             return $plugin_template;
@@ -1694,6 +1758,47 @@ function business_showcase_get_rating_summary( $post_id ) {
 function business_showcase_display_rating_summary( $post_id ) {
     $summary = business_showcase_get_rating_summary( $post_id );
     echo $summary['html'];
+}
+
+/**
+ * Get Rating Stats (Alias for get_rating_summary for compatibility)
+ * 
+ * @param int $post_id The post ID
+ * @return array Array with 'average', 'count', and 'html' keys
+ */
+function business_showcase_get_rating_stats( $post_id ) {
+    return business_showcase_get_rating_summary( $post_id );
+}
+
+/**
+ * Get Star Rating HTML (Returns just the star HTML without wrapper)
+ * 
+ * @param float $rating The rating value (0-5)
+ * @return string HTML string of stars
+ */
+function business_showcase_get_star_rating_html( $rating ) {
+    $output = '';
+    
+    $full_stars = floor( $rating );
+    $half_star = ( $rating - $full_stars ) >= 0.5 ? 1 : 0;
+    $empty_stars = 5 - $full_stars - $half_star;
+    
+    // Full stars
+    for ( $i = 0; $i < $full_stars; $i++ ) {
+        $output .= '<span class="star filled">★</span>';
+    }
+    
+    // Half star
+    if ( $half_star ) {
+        $output .= '<span class="star half">★</span>';
+    }
+    
+    // Empty stars
+    for ( $i = 0; $i < $empty_stars; $i++ ) {
+        $output .= '<span class="star empty">☆</span>';
+    }
+    
+    return $output;
 }
 
 /**

@@ -55,7 +55,7 @@
         });
         
         // Handle reset button
-        $('#reset-filters').on('click', function() {
+        $('#reset-filters, #reset-all-filters').on('click', function() {
             $('#category-filter').val('');
             $('#service-filter').val('');
             $('#business-search').val('');
