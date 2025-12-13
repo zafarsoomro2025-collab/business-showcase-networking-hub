@@ -11,6 +11,7 @@
      * Initialize plugin
      */
     $(document).ready(function() {
+        console.log('Business Showcase & Networking Hub JS initialized', businessShowcaseAjax);
         businessShowcaseInit();
         initBusinessDirectory();
         initStarRating();
@@ -631,9 +632,9 @@
     }
 
     /**
-     * AJAX Example Function
+     * AJAX Helper Function
      */
-    function businessShowcaseAjax(action, data) {
+    function performBusinessAjax(action, data) {
         $.ajax({
             url: businessShowcaseAjax.ajaxurl,
             type: 'POST',

@@ -30,7 +30,7 @@ if ( ! defined( 'WPINC' ) ) {
 /**
  * Plugin Version
  */
-define( 'BUSINESS_SHOWCASE_VERSION', '1.0.0' );
+define( 'BUSINESS_SHOWCASE_VERSION', '1.0.1' );
 
 /**
  * Plugin Directory Path
@@ -161,9 +161,9 @@ function business_showcase_enqueue_scripts() {
         'businessShowcaseAjax',
         array(
             'ajaxurl' => admin_url( 'admin-ajax.php' ),
-            'nonce' => wp_create_nonce( 'business_showcase_nonce' ),
+            'nonce'   => wp_create_nonce( 'business_showcase_nonce' ),
             'loading_text' => __( 'Loading...', 'business-showcase-networking-hub' ),
-            'error_text' => __( 'Error loading businesses. Please try again.', 'business-showcase-networking-hub' ),
+            'error_text'   => __( 'Error loading businesses. Please try again.', 'business-showcase-networking-hub' ),
         )
     );
     
