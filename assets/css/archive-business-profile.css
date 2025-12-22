@@ -655,3 +655,103 @@
         font-size: 0.9rem;
     }
 }
+
+/* ========================================
+   SUCCESS STORIES BLOCK STYLES
+   ======================================== */
+
+/* Success Stories Rank Badge */
+.story-rank-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    width: 42px;
+    height: 42px;
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    box-shadow: 0 4px 12px rgba(251, 191, 36, 0.5);
+    z-index: 15;
+    border: 3px solid #fff;
+}
+
+.success-story-card.rank-1 .story-rank-badge {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+}
+
+.success-story-card.rank-2 .story-rank-badge {
+    background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+}
+
+.success-story-card.rank-3 .story-rank-badge {
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+}
+
+/* Success Stories Grid Layout */
+.success-stories-grid.columns-2 {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.success-stories-grid.columns-3 {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.success-stories-grid.columns-4 {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+/* Success Story Card Specific Styles */
+.success-story-card {
+    position: relative;
+}
+
+.success-story-card.rank-1 {
+    border: 2px solid #fbbf24;
+}
+
+.success-story-card.rank-1:hover {
+    box-shadow: 0 12px 32px rgba(251, 191, 36, 0.3);
+}
+
+.success-story-card.rank-2 {
+    border: 2px solid #94a3b8;
+}
+
+.success-story-card.rank-2:hover {
+    box-shadow: 0 12px 32px rgba(148, 163, 184, 0.3);
+}
+
+.success-story-card.rank-3 {
+    border: 2px solid #f97316;
+}
+
+.success-story-card.rank-3:hover {
+    box-shadow: 0 12px 32px rgba(249, 115, 22, 0.3);
+}
+
+/* Responsive Success Stories */
+@media (max-width: 1024px) {
+    .success-stories-grid.columns-4,
+    .success-stories-grid.columns-3 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .success-stories-grid.columns-2,
+    .success-stories-grid.columns-3,
+    .success-stories-grid.columns-4 {
+        grid-template-columns: 1fr;
+    }
+    
+    .story-rank-badge {
+        width: 36px;
+        height: 36px;
+        font-size: 0.95rem;
+    }
+}

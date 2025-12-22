@@ -186,8 +186,8 @@ function business_showcase_enqueue_scripts() {
         'all'
     );
     
-    // Enqueue archive CSS on archive pages
-    if ( is_post_type_archive( 'business_profile' ) || is_tax( 'business_category' ) ) {
+    // Enqueue archive CSS on archive pages or when shortcode is used
+    if ( is_post_type_archive( 'business_profile' ) || is_tax( 'business_category' ) || $has_content ) {
         wp_enqueue_style(
             'business-showcase-archive-style',
             BUSINESS_SHOWCASE_PLUGIN_URL . 'assets/css/archive-business-profile.css',
@@ -950,6 +950,208 @@ function business_showcase_featured_shortcode( $atts ) {
 add_shortcode( 'featured_businesses', 'business_showcase_featured_shortcode' );
 
 /**
+ * Register Shortcode: [featured_carousel]
+ * Displays featured businesses in a responsive slider carousel
+ */
+function business_showcase_featured_carousel_shortcode( $atts ) {
+    // Shortcode attributes
+    $atts = shortcode_atts( array(
+        'posts_per_page' => 10,
+        'autoplay' => 'true',
+        'autoplay_speed' => 5000,
+        'show_dots' => 'true',
+        'show_arrows' => 'true',
+    ), $atts );
+    
+    // Query arguments for featured businesses
+    $query_args = array(
+        'post_type' => 'business_profile',
+        'posts_per_page' => intval( $atts['posts_per_page'] ),
+        'post_status' => 'publish',
+        'orderby' => 'date',
+        'order' => 'DESC',
+        'meta_query' => array(
+            array(
+                'key' => '_business_is_featured',
+                'value' => '1',
+            ),
+        ),
+    );
+    
+    $query = new WP_Query( $query_args );
+    
+    if ( ! $query->have_posts() ) {
+        return '<p class="no-featured-carousel">' . esc_html__( 'No featured businesses found for carousel.', 'business-showcase-networking-hub' ) . '</p>';
+    }
+    
+    // Generate unique ID for this carousel instance
+    $carousel_id = 'featured-carousel-' . uniqid();
+    
+    ob_start();
+    ?>
+    
+    <div class="featured-carousel-wrapper" id="<?php echo esc_attr( $carousel_id ); ?>" 
+         data-autoplay="<?php echo esc_attr( $atts['autoplay'] ); ?>"
+         data-autoplay-speed="<?php echo esc_attr( $atts['autoplay_speed'] ); ?>">
+        
+        <div class="featured-carousel-container">
+            
+            <div class="carousel-track-container">
+                <div class="carousel-track">
+                    
+                    <?php 
+                    $slide_index = 0;
+                    while ( $query->have_posts() ) : $query->the_post();
+                        $post_id = get_the_ID();
+                        $website_url = get_post_meta( $post_id, '_business_website_url', true );
+                        $categories = get_the_terms( $post_id, 'business_category' );
+                        $services = get_post_meta( $post_id, '_business_services', true );
+                        
+                        // Get rating stats
+                        $rating_data = business_showcase_get_rating_stats( $post_id );
+                        $avg_rating = $rating_data['average'];
+                        $rating_count = $rating_data['count'];
+                    ?>
+                    
+                    <div class="carousel-slide" data-slide-index="<?php echo esc_attr( $slide_index ); ?>">
+                        <div class="carousel-slide-inner">
+                            
+                            <!-- Business Image -->
+                            <div class="carousel-slide-image">
+                                <?php if ( has_post_thumbnail() ) : ?>
+                                    <?php the_post_thumbnail( 'large', array( 'alt' => esc_attr( get_the_title() ) ) ); ?>
+                                <?php else : ?>
+                                    <div class="carousel-placeholder">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                            <polyline points="21 15 16 10 5 21"></polyline>
+                                        </svg>
+                                    </div>
+                                <?php endif; ?>
+                                
+                                <div class="carousel-featured-badge">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                    </svg>
+                                    <?php esc_html_e( 'Featured', 'business-showcase-networking-hub' ); ?>
+                                </div>
+                            </div>
+                            
+                            <!-- Business Content -->
+                            <div class="carousel-slide-content">
+                                
+                                <h3 class="carousel-business-title">
+                                    <a href="<?php the_permalink(); ?>"><?php the_title(); ?></a>
+                                </h3>
+                                
+                                <?php if ( $categories && ! is_wp_error( $categories ) ) : ?>
+                                    <div class="carousel-categories">
+                                        <?php foreach ( $categories as $category ) : ?>
+                                            <span class="carousel-category-badge"><?php echo esc_html( $category->name ); ?></span>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php endif; ?>
+                                
+                                <?php if ( $avg_rating > 0 ) : ?>
+                                    <div class="carousel-rating">
+                                        <div class="carousel-stars">
+                                            <?php echo business_showcase_get_star_rating_html( $avg_rating ); ?>
+                                        </div>
+                                        <span class="carousel-rating-text">
+                                            <?php echo number_format( $avg_rating, 1 ); ?> 
+                                            (<?php echo esc_html( $rating_count ); ?> <?php echo esc_html( _n( 'review', 'reviews', $rating_count, 'business-showcase-networking-hub' ) ); ?>)
+                                        </span>
+                                    </div>
+                                <?php endif; ?>
+                                
+                                <div class="carousel-excerpt">
+                                    <?php echo wp_trim_words( get_the_excerpt(), 20 ); ?>
+                                </div>
+                                
+                                <?php if ( ! empty( $services ) && is_array( $services ) ) : ?>
+                                    <div class="carousel-services">
+                                        <?php 
+                                        $service_labels = business_showcase_get_service_labels();
+                                        $display_count = 0;
+                                        foreach ( $services as $service ) : 
+                                            if ( $display_count >= 3 ) break;
+                                            if ( isset( $service_labels[ $service ] ) ) :
+                                                $display_count++;
+                                        ?>
+                                            <span class="carousel-service-tag"><?php echo esc_html( $service_labels[ $service ] ); ?></span>
+                                        <?php 
+                                            endif;
+                                        endforeach;
+                                        if ( count( $services ) > 3 ) : ?>
+                                            <span class="carousel-service-more">+<?php echo count( $services ) - 3; ?> more</span>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endif; ?>
+                                
+                                <div class="carousel-actions">
+                                    <a href="<?php the_permalink(); ?>" class="carousel-btn carousel-btn-primary">
+                                        <?php esc_html_e( 'View Profile', 'business-showcase-networking-hub' ); ?>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                                            <polyline points="12 5 19 12 12 19"></polyline>
+                                        </svg>
+                                    </a>
+                                    <?php if ( $website_url ) : ?>
+                                        <a href="<?php echo esc_url( $website_url ); ?>" class="carousel-btn carousel-btn-secondary" target="_blank" rel="nofollow noopener">
+                                            <?php esc_html_e( 'Visit Website', 'business-showcase-networking-hub' ); ?>
+                                        </a>
+                                    <?php endif; ?>
+                                </div>
+                                
+                            </div>
+                            
+                        </div>
+                    </div>
+                    
+                    <?php 
+                    $slide_index++;
+                    endwhile;
+                    wp_reset_postdata();
+                    ?>
+                    
+                </div>
+            </div>
+            
+            <?php if ( $atts['show_arrows'] === 'true' ) : ?>
+                <button class="carousel-nav carousel-prev" aria-label="<?php esc_attr_e( 'Previous slide', 'business-showcase-networking-hub' ); ?>">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
+                <button class="carousel-nav carousel-next" aria-label="<?php esc_attr_e( 'Next slide', 'business-showcase-networking-hub' ); ?>">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
+            <?php endif; ?>
+            
+            <?php if ( $atts['show_dots'] === 'true' ) : ?>
+                <div class="carousel-dots">
+                    <?php for ( $i = 0; $i < $slide_index; $i++ ) : ?>
+                        <button class="carousel-dot <?php echo $i === 0 ? 'active' : ''; ?>" 
+                                data-slide="<?php echo esc_attr( $i ); ?>"
+                                aria-label="<?php echo esc_attr( sprintf( __( 'Go to slide %d', 'business-showcase-networking-hub' ), $i + 1 ) ); ?>"></button>
+                    <?php endfor; ?>
+                </div>
+            <?php endif; ?>
+            
+        </div>
+        
+    </div>
+    
+    <?php
+    
+    return ob_get_clean();
+}
+add_shortcode( 'featured_carousel', 'business_showcase_featured_carousel_shortcode' );
+
+/**
  * Get Business Grid HTML
  */
 function business_showcase_get_business_grid( $args = array() ) {
@@ -1017,78 +1219,134 @@ function business_showcase_get_business_grid( $args = array() ) {
     if ( $query->have_posts() ) :
         while ( $query->have_posts() ) : $query->the_post();
             $post_id = get_the_ID();
-            $website_url = get_post_meta( $post_id, '_business_website_url', true );
-            $contact_email = get_post_meta( $post_id, '_business_contact_email', true );
-            $services = get_post_meta( $post_id, '_business_services', true );
             $is_featured = get_post_meta( $post_id, '_business_is_featured', true );
+            $star_rating = get_post_meta( $post_id, '_business_star_rating', true );
+            $website_url = get_post_meta( $post_id, '_business_website_url', true );
+            $services = get_post_meta( $post_id, '_business_services', true );
             $categories = get_the_terms( $post_id, 'business_category' );
+            
+            // Get rating stats
+            $rating_data = business_showcase_get_rating_stats( $post_id );
+            $avg_rating = $rating_data['average'];
+            $rating_count = $rating_data['count'];
             ?>
             
-            <div class="business-card <?php echo ( $is_featured == '1' ) ? 'featured' : ''; ?>">
+            <div class="business-card <?php echo $is_featured == '1' ? 'featured' : ''; ?>">
                 
                 <?php if ( $is_featured == '1' ) : ?>
-                    <span class="featured-badge"><?php esc_html_e( 'Featured', 'business-showcase-networking-hub' ); ?></span>
-                <?php endif; ?>
-                
-                <?php if ( has_post_thumbnail() ) : ?>
-                    <div class="business-logo">
-                        <a href="<?php the_permalink(); ?>">
-                            <?php the_post_thumbnail( 'medium' ); ?>
-                        </a>
+                    <div class="featured-ribbon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                        </svg>
+                        <?php esc_html_e( 'Featured', 'business-showcase-networking-hub' ); ?>
                     </div>
                 <?php endif; ?>
                 
-                <div class="business-content">
-                    <h3 class="business-title">
-                        <a href="<?php the_permalink(); ?>"><?php the_title(); ?></a>
-                    </h3>
+                <a href="<?php the_permalink(); ?>" class="business-card-link">
                     
-                    <?php if ( $categories && ! is_wp_error( $categories ) ) : ?>
-                        <div class="business-categories">
-                            <?php foreach ( $categories as $category ) : ?>
-                                <span class="business-category-tag"><?php echo esc_html( $category->name ); ?></span>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <div class="business-excerpt">
-                        <?php echo wp_kses_post( wp_trim_words( get_the_excerpt(), 20 ) ); ?>
-                    </div>
-                    
-                    <?php if ( ! empty( $services ) && is_array( $services ) ) : ?>
-                        <div class="business-services">
-                            <strong><?php esc_html_e( 'Services:', 'business-showcase-networking-hub' ); ?></strong>
-                            <?php 
-                            $service_labels = business_showcase_get_service_labels();
-                            $service_names = array();
-                            foreach ( $services as $service ) {
-                                if ( isset( $service_labels[ $service ] ) ) {
-                                    $service_names[] = $service_labels[ $service ];
-                                }
-                            }
-                            echo esc_html( implode( ', ', $service_names ) );
-                            ?>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <div class="business-actions">
-                        <?php if ( $website_url ) : ?>
-                            <a href="<?php echo esc_url( $website_url ); ?>" target="_blank" class="business-btn">
-                                <?php esc_html_e( 'Visit Website', 'business-showcase-networking-hub' ); ?>
-                            </a>
+                    <!-- Business Logo/Image -->
+                    <div class="business-card-image">
+                        <?php if ( has_post_thumbnail() ) : ?>
+                            <?php the_post_thumbnail( 'medium', array( 'alt' => esc_attr( get_the_title() ) ) ); ?>
+                        <?php else : ?>
+                            <div class="business-placeholder-image">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                    <polyline points="21 15 16 10 5 21"></polyline>
+                                </svg>
+                            </div>
                         <?php endif; ?>
-                        <a href="<?php the_permalink(); ?>" class="business-btn business-btn-secondary">
-                            <?php esc_html_e( 'View Details', 'business-showcase-networking-hub' ); ?>
-                        </a>
                     </div>
-                </div>
+                    
+                    <!-- Business Info -->
+                    <div class="business-card-content">
+                        
+                        <h3 class="business-card-title"><?php the_title(); ?></h3>
+                        
+                        <!-- Categories -->
+                        <?php if ( ! empty( $categories ) && ! is_wp_error( $categories ) ) : ?>
+                            <div class="business-card-categories">
+                                <?php 
+                                $category_names = array();
+                                foreach ( $categories as $category ) {
+                                    $category_names[] = esc_html( $category->name );
+                                }
+                                echo implode( ' • ', array_slice( $category_names, 0, 2 ) );
+                                ?>
+                            </div>
+                        <?php endif; ?>
+                        
+                        <!-- Excerpt -->
+                        <div class="business-card-excerpt">
+                            <?php echo wp_trim_words( get_the_excerpt(), 15, '...' ); ?>
+                        </div>
+                        
+                        <!-- Rating -->
+                        <?php if ( $avg_rating > 0 ) : ?>
+                            <div class="business-card-rating">
+                                <div class="rating-stars" data-rating="<?php echo esc_attr( $avg_rating ); ?>">
+                                    <?php echo business_showcase_get_star_rating_html( $avg_rating ); ?>
+                                </div>
+                                <span class="rating-text">
+                                    <strong><?php echo number_format( $avg_rating, 1 ); ?></strong>
+                                    <span class="rating-count">(<?php echo esc_html( $rating_count ); ?>)</span>
+                                </span>
+                            </div>
+                        <?php endif; ?>
+                        
+                        <!-- Services -->
+                        <?php if ( ! empty( $services ) ) : ?>
+                            <div class="business-card-services">
+                                <?php
+                                // Handle both string and array formats
+                                if ( is_array( $services ) ) {
+                                    $services_array = array_slice( $services, 0, 3 );
+                                } else {
+                                    $services_array = array_slice( array_map( 'trim', explode( ',', $services ) ), 0, 3 );
+                                }
+                                
+                                if ( ! empty( $services_array ) ) {
+                                    foreach ( $services_array as $service ) {
+                                        if ( ! empty( $service ) ) {
+                                            echo '<span class="service-tag">' . esc_html( $service ) . '</span>';
+                                        }
+                                    }
+                                }
+                                ?>
+                            </div>
+                        <?php endif; ?>
+                        
+                    </div>
+                    
+                    <!-- View Profile Button -->
+                    <div class="business-card-footer">
+                        <span class="view-profile-btn">
+                            <?php esc_html_e( 'View Profile', 'business-showcase-networking-hub' ); ?>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </span>
+                    </div>
+                    
+                </a>
                 
             </div>
             
         <?php endwhile;
         wp_reset_postdata();
     else : ?>
-        <p class="no-businesses-found"><?php esc_html_e( 'No businesses found.', 'business-showcase-networking-hub' ); ?></p>
+        <div class="no-results-found">
+            <div class="no-results-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+            </div>
+            <h2><?php esc_html_e( 'No Businesses Found', 'business-showcase-networking-hub' ); ?></h2>
+            <p><?php esc_html_e( 'We couldn\'t find any businesses matching your criteria. Try adjusting your search or filters.', 'business-showcase-networking-hub' ); ?></p>
+        </div>
     <?php endif;
     
     return ob_get_clean();
@@ -2951,92 +3209,115 @@ function business_showcase_render_success_stories_block( $attributes ) {
     ob_start();
     ?>
     
-    <div class="success-stories-block layout-<?php echo esc_attr( $layout_style ); ?>">
-        
-        <div class="success-stories-container <?php echo ( $layout_style !== 'list' ) ? 'columns-' . esc_attr( $columns ) : ''; ?>">
+    <div class="business-archive-wrapper">
+        <div class="business-archive-container">
             
-            <?php 
-            $story_count = 1;
-            while ( $query->have_posts() ) : $query->the_post();
-                $post_id = get_the_ID();
-                $average_rating = get_post_meta( $post_id, '_business_star_rating', true );
-                $rating_count = get_post_meta( $post_id, '_business_rating_count', true );
-                $website_url = get_post_meta( $post_id, '_business_website_url', true );
-                $categories = get_the_terms( $post_id, 'business_category' );
-            ?>
-            
-            <article class="success-story-item rank-<?php echo esc_attr( $story_count ); ?>">
-                
-                <?php if ( $story_count <= 3 ) : ?>
-                    <span class="story-rank-badge">#<?php echo esc_html( $story_count ); ?></span>
-                <?php endif; ?>
-                
-                <?php if ( has_post_thumbnail() ) : ?>
-                    <div class="story-logo">
-                        <a href="<?php the_permalink(); ?>">
-                            <?php the_post_thumbnail( 'medium' ); ?>
-                        </a>
-                    </div>
-                <?php endif; ?>
-                
-                <div class="story-content">
+            <div class="business-archive-grid-wrapper">
+                <div class="business-grid success-stories-grid layout-<?php echo esc_attr( $layout_style ); ?> <?php echo ( $layout_style !== 'list' ) ? 'columns-' . esc_attr( $columns ) : ''; ?>">
                     
-                    <h3 class="story-title">
-                        <a href="<?php the_permalink(); ?>"><?php the_title(); ?></a>
-                    </h3>
+                    <?php 
+                    $story_count = 1;
+                    while ( $query->have_posts() ) : $query->the_post();
+                        $post_id = get_the_ID();
+                        $rating_data = business_showcase_get_rating_stats( $post_id );
+                        $average_rating = $rating_data['average'];
+                        $rating_count = $rating_data['count'];
+                        $website_url = get_post_meta( $post_id, '_business_website_url', true );
+                        $categories = get_the_terms( $post_id, 'business_category' );
+                        $is_featured = get_post_meta( $post_id, '_business_is_featured', true );
+                    ?>
                     
-                    <?php if ( $categories && ! is_wp_error( $categories ) ) : ?>
-                        <div class="story-category">
-                            <?php echo esc_html( $categories[0]->name ); ?>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <?php if ( $show_rating && $average_rating ) : ?>
-                        <div class="story-rating">
-                            <?php echo business_showcase_display_star_rating( floatval( $average_rating ) ); ?>
-                            <span class="rating-value">
-                                <?php echo esc_html( number_format( floatval( $average_rating ), 1 ) ); ?>
-                                <?php if ( $show_review_count && $rating_count ) : ?>
-                                    <span class="review-count">
-                                        (<?php 
-                                        printf(
-                                            esc_html( _n( '%d review', '%d reviews', intval( $rating_count ), 'business-showcase-networking-hub' ) ),
-                                            intval( $rating_count )
-                                        );
-                                        ?>)
-                                    </span>
-                                <?php endif; ?>
-                            </span>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <div class="story-excerpt">
-                        <?php echo wp_kses_post( wp_trim_words( get_the_excerpt(), 20 ) ); ?>
-                    </div>
-                    
-                    <div class="story-actions">
-                        <a href="<?php the_permalink(); ?>" class="story-btn">
-                            <?php esc_html_e( 'View Success Story', 'business-showcase-networking-hub' ); ?>
-                        </a>
-                        <?php if ( $website_url ) : ?>
-                            <a href="<?php echo esc_url( $website_url ); ?>" target="_blank" class="story-btn-secondary">
-                                <?php esc_html_e( 'Visit Website', 'business-showcase-networking-hub' ); ?>
-                            </a>
+                    <div class="business-card success-story-card rank-<?php echo esc_attr( $story_count ); ?> <?php echo $is_featured == '1' ? 'featured' : ''; ?>">
+                        
+                        <?php if ( $story_count <= 3 ) : ?>
+                            <div class="story-rank-badge">#<?php echo esc_html( $story_count ); ?></div>
                         <?php endif; ?>
+                        
+                        <?php if ( $is_featured == '1' ) : ?>
+                            <div class="featured-ribbon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                </svg>
+                                <?php esc_html_e( 'Featured', 'business-showcase-networking-hub' ); ?>
+                            </div>
+                        <?php endif; ?>
+                        
+                        <a href="<?php the_permalink(); ?>" class="business-card-link">
+                            
+                            <!-- Business Logo/Image -->
+                            <div class="business-card-image">
+                                <?php if ( has_post_thumbnail() ) : ?>
+                                    <?php the_post_thumbnail( 'medium', array( 'alt' => esc_attr( get_the_title() ) ) ); ?>
+                                <?php else : ?>
+                                    <div class="business-placeholder-image">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                            <polyline points="21 15 16 10 5 21"></polyline>
+                                        </svg>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                            
+                            <!-- Business Info -->
+                            <div class="business-card-content">
+                                
+                                <h3 class="business-card-title"><?php the_title(); ?></h3>
+                                
+                                <!-- Categories -->
+                                <?php if ( ! empty( $categories ) && ! is_wp_error( $categories ) ) : ?>
+                                    <div class="business-card-categories">
+                                        <?php echo esc_html( $categories[0]->name ); ?>
+                                    </div>
+                                <?php endif; ?>
+                                
+                                <!-- Excerpt -->
+                                <div class="business-card-excerpt">
+                                    <?php echo wp_trim_words( get_the_excerpt(), 15, '...' ); ?>
+                                </div>
+                                
+                                <!-- Rating -->
+                                <?php if ( $show_rating && $average_rating > 0 ) : ?>
+                                    <div class="business-card-rating">
+                                        <div class="rating-stars" data-rating="<?php echo esc_attr( $average_rating ); ?>">
+                                            <?php echo business_showcase_get_star_rating_html( $average_rating ); ?>
+                                        </div>
+                                        <span class="rating-text">
+                                            <strong><?php echo number_format( $average_rating, 1 ); ?></strong>
+                                            <?php if ( $show_review_count && $rating_count > 0 ) : ?>
+                                                <span class="rating-count">(<?php echo esc_html( $rating_count ); ?>)</span>
+                                            <?php endif; ?>
+                                        </span>
+                                    </div>
+                                <?php endif; ?>
+                                
+                            </div>
+                            
+                            <!-- View Profile Button -->
+                            <div class="business-card-footer">
+                                <span class="view-profile-btn">
+                                    <?php esc_html_e( 'View Success Story', 'business-showcase-networking-hub' ); ?>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                        <polyline points="12 5 19 12 12 19"></polyline>
+                                    </svg>
+                                </span>
+                            </div>
+                            
+                        </a>
+                        
                     </div>
+                    
+                    <?php 
+                    $story_count++;
+                    endwhile; 
+                    wp_reset_postdata();
+                    ?>
                     
                 </div>
-                
-            </article>
-            
-            <?php 
-            $story_count++;
-            endwhile; 
-            wp_reset_postdata();
-            ?>
+            </div>
             
         </div>
-        
     </div>
     
     <?php

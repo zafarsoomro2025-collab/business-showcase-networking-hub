@@ -653,5 +653,184 @@
             }
         });
     }
+    
+    /**
+     * Featured Carousel Functionality
+     */
+    function initFeaturedCarousel() {
+        $('.featured-carousel-wrapper').each(function() {
+            const $carousel = $(this);
+            const $track = $carousel.find('.carousel-track');
+            const $slides = $carousel.find('.carousel-slide');
+            const $prevBtn = $carousel.find('.carousel-prev');
+            const $nextBtn = $carousel.find('.carousel-next');
+            const $dots = $carousel.find('.carousel-dot');
+            
+            if ($slides.length === 0) {
+                return;
+            }
+            
+            let currentSlide = 0;
+            const totalSlides = $slides.length;
+            const autoplay = $carousel.data('autoplay') === 'true' || $carousel.data('autoplay') === true;
+            const autoplaySpeed = parseInt($carousel.data('autoplay-speed')) || 5000;
+            let autoplayTimer = null;
+            
+            // Show first slide
+            $slides.eq(0).addClass('active');
+            
+            // Update slide position
+            function updateSlidePosition(animate = true) {
+                const offset = -currentSlide * 100;
+                
+                if (animate) {
+                    $track.css('transform', `translateX(${offset}%)`);
+                } else {
+                    $track.css({
+                        'transition': 'none',
+                        'transform': `translateX(${offset}%)`
+                    });
+                    
+                    // Re-enable transition after a frame
+                    setTimeout(() => {
+                        $track.css('transition', '');
+                    }, 50);
+                }
+                
+                // Update active slide class
+                $slides.removeClass('active');
+                $slides.eq(currentSlide).addClass('active');
+                
+                // Update dots
+                $dots.removeClass('active');
+                $dots.eq(currentSlide).addClass('active');
+                
+                // Update button states
+                if ($slides.length <= 1) {
+                    $prevBtn.prop('disabled', true);
+                    $nextBtn.prop('disabled', true);
+                } else {
+                    $prevBtn.prop('disabled', false);
+                    $nextBtn.prop('disabled', false);
+                }
+            }
+            
+            // Go to specific slide
+            function goToSlide(index) {
+                if (index < 0) {
+                    currentSlide = totalSlides - 1;
+                } else if (index >= totalSlides) {
+                    currentSlide = 0;
+                } else {
+                    currentSlide = index;
+                }
+                
+                updateSlidePosition();
+                resetAutoplay();
+            }
+            
+            // Next slide
+            function nextSlide() {
+                goToSlide(currentSlide + 1);
+            }
+            
+            // Previous slide
+            function prevSlide() {
+                goToSlide(currentSlide - 1);
+            }
+            
+            // Autoplay functions
+            function startAutoplay() {
+                if (autoplay && totalSlides > 1) {
+                    autoplayTimer = setInterval(nextSlide, autoplaySpeed);
+                }
+            }
+            
+            function stopAutoplay() {
+                if (autoplayTimer) {
+                    clearInterval(autoplayTimer);
+                    autoplayTimer = null;
+                }
+            }
+            
+            function resetAutoplay() {
+                stopAutoplay();
+                startAutoplay();
+            }
+            
+            // Event listeners
+            $nextBtn.on('click', function(e) {
+                e.preventDefault();
+                nextSlide();
+            });
+            
+            $prevBtn.on('click', function(e) {
+                e.preventDefault();
+                prevSlide();
+            });
+            
+            $dots.on('click', function(e) {
+                e.preventDefault();
+                const slideIndex = parseInt($(this).data('slide'));
+                goToSlide(slideIndex);
+            });
+            
+            // Pause autoplay on hover
+            $carousel.on('mouseenter', stopAutoplay);
+            $carousel.on('mouseleave', startAutoplay);
+            
+            // Keyboard navigation
+            $carousel.on('keydown', function(e) {
+                if (e.key === 'ArrowLeft') {
+                    prevSlide();
+                } else if (e.key === 'ArrowRight') {
+                    nextSlide();
+                }
+            });
+            
+            // Touch/swipe support
+            let touchStartX = 0;
+            let touchEndX = 0;
+            
+            $carousel.on('touchstart', function(e) {
+                touchStartX = e.touches[0].clientX;
+                stopAutoplay();
+            });
+            
+            $carousel.on('touchmove', function(e) {
+                touchEndX = e.touches[0].clientX;
+            });
+            
+            $carousel.on('touchend', function() {
+                const swipeThreshold = 50;
+                const diff = touchStartX - touchEndX;
+                
+                if (Math.abs(diff) > swipeThreshold) {
+                    if (diff > 0) {
+                        nextSlide();
+                    } else {
+                        prevSlide();
+                    }
+                }
+                
+                startAutoplay();
+            });
+            
+            // Initialize autoplay
+            startAutoplay();
+            
+            // Pause autoplay when tab is not visible
+            document.addEventListener('visibilitychange', function() {
+                if (document.hidden) {
+                    stopAutoplay();
+                } else {
+                    startAutoplay();
+                }
+            });
+        });
+    }
+    
+    // Initialize carousel when DOM is ready
+    initFeaturedCarousel();
 
 })(jQuery);
